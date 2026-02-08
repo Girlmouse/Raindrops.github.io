@@ -16,7 +16,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 </head>
 <body>
 <canvas id="g"></canvas>
-<p class="sub">RAINDROPS — A moment in time</p>
+<p class="sub">RAINDROPS — A MONENT IN TIME</p>
 <script>
 // === CONFIG ===
 const DROPS_TO_WIN = 30;
@@ -562,22 +562,25 @@ function loop(){
     c.save();
     const words=gs.endQuote.split(" ");
     let lines=[],line="";
-    words.forEach(w=>{const test=line?line+" "+w:w;if(test.length>25){lines.push(line);line=w;}else line=test;});
+    words.forEach(w=>{const test=line?line+" "+w:w;if(test.length>22){lines.push(line);line=w;}else line=test;});
     if(line)lines.push(line);
-    const lh=26,qtH=lines.length*lh+24,qtW=cw*0.8,qtX=(cw-qtW)/2,qtY=ch/2-qtH/2-15;
+    const lh=32,qtH=lines.length*lh+36,qtW=cw*0.85,qtX=(cw-qtW)/2,qtY=ch/2-qtH/2-10;
     // Background pill
-    c.fillStyle="rgba(255,255,255,0.35)";
-    c.beginPath();c.roundRect(qtX,qtY,qtW,qtH,12);c.fill();
+    c.fillStyle="rgba(255,255,255,0.4)";
+    c.beginPath();c.roundRect(qtX,qtY,qtW,qtH,14);c.fill();
     // Quote text
-    c.fillStyle="rgba(90,50,120,0.85)";
-    c.font="italic 600 18px 'Helvetica Neue',sans-serif";
+    c.fillStyle="rgba(70,35,100,0.9)";
+    c.font="italic 600 22px 'Helvetica Neue',sans-serif";
     c.textAlign="center";
-    lines.forEach((l,i)=>c.fillText(l,cw/2,qtY+20+i*lh));
+    lines.forEach((l,i)=>c.fillText(l,cw/2,qtY+28+i*lh));
     c.restore();
 
-    // Tap to continue
-    c.fillStyle="rgba(120,80,150,0.35)";c.font="11px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";c.fillText("tap to continue",cw/2,ch-20);
+    // Tap to continue — button style
+    const btnW=140,btnH=34,btnX=(cw-btnW)/2,btnY=ch-55;
+    c.fillStyle="rgba(255,255,255,0.3)";
+    c.beginPath();c.roundRect(btnX,btnY,btnW,btnH,17);c.fill();
+    c.fillStyle="rgba(90,50,130,0.7)";c.font="600 13px 'Helvetica Neue',sans-serif";
+    c.textAlign="center";c.fillText("tap to continue",cw/2,btnY+btnH/2+4);
   }
 
   requestAnimationFrame(loop);
