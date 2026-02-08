@@ -552,7 +552,7 @@ function loop(){
      // Rainbow arc — corner to corner
     const arcY=ch*1.15,arcR=cw*0.85;
     ["#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6"].forEach((col,i)=>{
-      c.save();c.strokeStyle=col;c.globalAlpha=0.3;c.lineWidth=12;
+      c.save();c.strokeStyle=col;c.globalAlpha=0.25;c.lineWidth=10;
       c.beginPath();c.arc(cw*0.5,arcY,arcR+i*14,Math.PI+0.15,Math.PI*2-0.15);c.stroke();c.restore();
     });
 
