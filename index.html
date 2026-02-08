@@ -550,7 +550,7 @@ function loop(){
     c.fillStyle="rgba(255,255,255,0.85)";c.beginPath();c.arc(sx,sy,22,0,Math.PI*2);c.fill();
 
      // Rainbow arc — corner to corner
-    const arcY=ch*1.6,arcR=cw*0.9;
+    const arcY=ch*1.15,arcR=cw*0.85;
     ["#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6"].forEach((col,i)=>{
       c.save();c.strokeStyle=col;c.globalAlpha=0.3;c.lineWidth=12;
       c.beginPath();c.arc(cw*0.5,arcY,arcR+i*14,Math.PI+0.15,Math.PI*2-0.15);c.stroke();c.restore();
