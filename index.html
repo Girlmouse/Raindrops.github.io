@@ -455,19 +455,20 @@ function loop(){
   // === MENU ===
   if(gs.phase==="menu"){
     gs.menuPulse+=0.018;
-    c.fillStyle="rgba(8,6,14,0.25)";c.fillRect(0,ch*0.3,cw,ch*0.35);
+    // Darker backdrop for readability
+    c.fillStyle="rgba(8,6,14,0.45)";c.fillRect(0,ch*0.28,cw,ch*0.42);
     // Title
-    c.fillStyle="rgba(235,220,255,0.75)";c.font="600 26px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";c.fillText("raindrops",cw/2,ch/2-16);
+    c.fillStyle="rgba(245,235,255,0.9)";c.font="600 32px 'Helvetica Neue',sans-serif";
+    c.textAlign="center";c.fillText("raindrops",cw/2,ch/2-22);
     // Tap prompt — pulsing
-    c.fillStyle=`rgba(220,190,255,${0.3+Math.sin(gs.menuPulse)*0.15})`;
-    c.font="12px 'Helvetica Neue',sans-serif";c.fillText("tap to begin",cw/2,ch/2+12);
+    c.fillStyle=`rgba(230,210,255,${0.5+Math.sin(gs.menuPulse)*0.2})`;
+    c.font="600 15px 'Helvetica Neue',sans-serif";c.fillText("tap to begin",cw/2,ch/2+10);
     // Subtitle
-    c.fillStyle="rgba(200,180,230,0.2)";c.font="10px 'Helvetica Neue',sans-serif";
-    c.fillText("catch the glowing drops",cw/2,ch/2+30);
+    c.fillStyle="rgba(220,200,245,0.4)";c.font="12px 'Helvetica Neue',sans-serif";
+    c.fillText("catch the glowing drops",cw/2,ch/2+32);
     // Scene name
-    c.fillStyle="rgba(200,180,230,0.12)";c.font="9px 'Helvetica Neue',sans-serif";
-    c.fillText("city at night",cw/2,ch/2+48);
+    c.fillStyle="rgba(220,200,245,0.3)";c.font="11px 'Helvetica Neue',sans-serif";
+    c.fillText("city at night",cw/2,ch/2+52);
   }
 // === ENDING SEQUENCE — RAINBOW TRANSITION ===
   if(gs.phase==="ending"){
