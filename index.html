@@ -389,10 +389,6 @@ function loop(){
       if(d.caught){d.fadeOut-=0.08;if(d.fadeOut<=0){gs.drops.splice(i,1);continue;}}
       if(d.y>ch+20){gs.drops.splice(i,1);continue;}
 
-      // During ending, fade out glow drops
-      if((gs.phase==="ending"||gs.phase==="quote")&&d.isGlowing&&!d.caught){
-        d.fadeOut-=0.02;if(d.fadeOut<=0){gs.drops.splice(i,1);continue;}
-      }
       // During ending, gradually slow and fade regular rain
       if(gs.phase==="ending"&&!d.isGlowing){
         d.opacity*=0.998;
