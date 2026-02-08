@@ -16,7 +16,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 </head>
 <body>
 <canvas id="g"></canvas>
-<p class="sub">RAINDROPS — a moment of calm</p>
+<p class="sub">RAINDROPS — A moment in time</p>
 <script>
 // === CONFIG ===
 const DROPS_TO_WIN = 30;
@@ -99,8 +99,8 @@ function resetRain(){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(0.18,actx
 // === CANVAS ===
 const cv=document.getElementById("g"),c=cv.getContext("2d");
 function getSize(){
-  const mw=Math.min(window.innerWidth*0.96,500);
-  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.82;
+  const mw=Math.min(window.innerWidth*0.98,700);
+  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.90;
   let w=mw,h=w/(16/9);if(h>mh){h=mh;w=h*(16/9);}if(w>mw){w=mw;h=w/(16/9);}
   return{w:Math.floor(w),h:Math.floor(h)};
 }
