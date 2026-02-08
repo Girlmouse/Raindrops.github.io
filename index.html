@@ -433,11 +433,11 @@ function loop(){
       c.shadowColor="rgba(180,140,240,0.3)";c.shadowBlur=5;
       c.beginPath();c.roundRect(bx,by,bw*prog,bh,2);c.fill();c.shadowBlur=0;
     }
-    c.fillStyle="rgba(255,255,255,0.6)";c.font="10px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";c.fillText(`${gs.score} / ${DROPS_TO_WIN}`,cw/2,by-5);
+     c.fillStyle="rgba(255,255,255,0.7)";c.font="600 14px 'Helvetica Neue',sans-serif";
+    c.textAlign="center";c.fillText(`${gs.score} / ${DROPS_TO_WIN}`,cw/2,by-8);
     const m=Math.floor(gs.timeLeft/60),s=gs.timeLeft%60;
-    c.fillStyle="rgba(255,255,255,0.45)";c.font="10px 'Helvetica Neue',sans-serif";
-    c.textAlign="right";c.fillText(`${m}:${s.toString().padStart(2,"0")}`,cw-12,16);
+    c.fillStyle="rgba(255,255,255,0.55)";c.font="14px 'Helvetica Neue',sans-serif";
+    c.textAlign="right";c.fillText(`${m}:${s.toString().padStart(2,"0")}`,cw-15,22);
   }
 
   // === MENU ===
