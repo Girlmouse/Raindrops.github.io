@@ -99,10 +99,26 @@ function resetRain(){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(0.18,actx
 // === CANVAS ===
 const cv=document.getElementById("g"),c=cv.getContext("2d");
 function getSize(){
-  const mw=Math.min(window.innerWidth*0.98,700);
-  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.90;
-  let w=mw,h=w/(16/9);if(h>mh){h=mh;w=h*(16/9);}if(w>mw){w=mw;h=w/(16/9);}
-  return{w:Math.floor(w),h:Math.floor(h)};
+  const aspect = 16 / 9;
+
+  const vw = window.innerWidth;
+  const vh = window.visualViewport
+    ? window.visualViewport.height
+    : window.innerHeight;
+
+  let w = vw * 0.98;
+  let h = vh * 0.90;
+
+  if (w / h > aspect) {
+    w = h * aspect;
+  } else {
+    h = w / aspect;
+  }
+
+  return {
+    w: Math.floor(w),
+    h: Math.floor(h)
+  };
 }
 function resize(){const{w,h}=getSize();cv.width=w*2;cv.height=h*2;cv.style.width=w+"px";cv.style.height=h+"px";c.setTransform(2,0,0,2,0,0);}
 resize();window.addEventListener("resize",resize);
