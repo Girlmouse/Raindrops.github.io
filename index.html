@@ -232,6 +232,7 @@ function mkDrop(w,h,forceGlow){
     isGlowing:gl,pulsePhase:Math.random()*Math.PI*2,
     width:gl?2.5:0.5+Math.random()*0.7,
     caught:false,fadeOut:1,
+    grounded: false,
     drift:(Math.random()-0.5)*0.4,
   };
 }
