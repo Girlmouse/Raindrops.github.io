@@ -594,13 +594,6 @@ d.opacity *= 0.95; d.speed *= 0.98;
     c.fillStyle=sg;c.beginPath();c.arc(sx,sy,90,0,Math.PI*2);c.fill();
     c.fillStyle="rgba(255,255,255,0.85)";c.beginPath();c.arc(sx,sy,22,0,Math.PI*2);c.fill();
 
-     // Rainbow arc — corner to corner
-    const arcY=ch*1.15,arcR=cw*0.85;
-    ["#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6"].forEach((col,i)=>{
-      c.save();c.strokeStyle=col;c.globalAlpha=0.25;c.lineWidth=10;
-      c.beginPath();c.arc(cw*0.5,arcY,arcR+i*14,Math.PI+0.15,Math.PI*2-0.15);c.stroke();c.restore();
-    });
-
     // Floating particles
     if(gs.rbPs)gs.rbPs.forEach(p=>{
       p.wobble+=p.wobbleSpd;p.y-=p.speed*0.25;p.x+=Math.sin(p.wobble)*0.3;
@@ -613,21 +606,55 @@ d.opacity *= 0.95; d.speed *= 0.98;
     });
 
     // Quote with soft background pill
-    c.save();
-    const words=gs.endQuote.split(" ");
-    let lines=[],line="";
-    words.forEach(w=>{const test=line?line+" "+w:w;if(test.length>22){lines.push(line);line=w;}else line=test;});
-    if(line)lines.push(line);
-    const lh=32,qtH=lines.length*lh+36,qtW=cw*0.85,qtX=(cw-qtW)/2,qtY=ch/2-qtH/2-10;
-    // Background pill
-    c.fillStyle="rgba(255,255,255,0.4)";
-    c.beginPath();c.roundRect(qtX,qtY,qtW,qtH,14);c.fill();
-    // Quote text
-    c.fillStyle="rgba(70,35,100,0.9)";
-    c.font="italic 600 22px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";
-    lines.forEach((l,i)=>c.fillText(l,cw/2,qtY+28+i*lh));
-    c.restore();
+c.save();
+
+// Wrap by pixel width (not character count)
+const maxW = cw * 0.72;
+const words = gs.endQuote.split(" ");
+let lines = [];
+let cur = "";
+
+c.font = "italic 600 22px 'Helvetica Neue',sans-serif";
+for (const w of words) {
+  const test = cur ? cur + " " + w : w;
+  if (c.measureText(test).width > maxW && cur) {
+    lines.push(cur);
+    cur = w;
+  } else {
+    cur = test;
+  }
+}
+if (cur) lines.push(cur);
+
+// Pill sizing + true vertical centering
+const lh = 34;
+const padX = 34;
+const padY = 22;
+
+const textW = Math.min(maxW, cw * 0.85);
+const qtW = textW + padX * 2;
+const qtH = lines.length * lh + padY * 2;
+
+const qtX = (cw - qtW) / 2;
+const qtY = ch * 0.50 - qtH / 2; // centered a touch lower than exact middle
+
+// Background pill
+c.fillStyle = "rgba(255,255,255,0.40)";
+c.beginPath();
+c.roundRect(qtX, qtY, qtW, qtH, 16);
+c.fill();
+
+// Quote text (centered inside pill)
+c.fillStyle = "rgba(70,35,100,0.90)";
+c.textAlign = "center";
+c.textBaseline = "middle";
+
+const startY = qtY + qtH / 2 - ((lines.length - 1) * lh) / 2;
+for (let i = 0; i < lines.length; i++) {
+  c.fillText(lines[i], cw / 2, startY + i * lh);
+}
+
+c.restore();
 
     // Tap to continue — button style
     const btnW=140,btnH=34,btnX=(cw-btnW)/2,btnY=ch-55;
