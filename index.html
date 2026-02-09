@@ -265,11 +265,14 @@ function mkRip(x,y){return{x,y,radius:3,opacity:0.45,speed:1};}
 
 // === INPUT ===
 function getPos(e){
-  const r=cv.getBoundingClientRect();
-  const sx=(cv.width/2)/r.width,sy=(cv.height/2)/r.height;
-  const px=e.touches?e.touches[0].clientX:e.clientX;
-  const py=e.touches?e.touches[0].clientY:e.clientY;
-  return{x:(px-r.left)*sx,y:(py-r.top)*sy};
+  const r = cv.getBoundingClientRect();
+  const sx = cv.width / r.width;
+  const sy = cv.height / r.height;
+
+  const px = e.touches ? e.touches[0].clientX : e.clientX;
+  const py = e.touches ? e.touches[0].clientY : e.clientY;
+
+  return { x: (px - r.left) * sx, y: (py - r.top) * sy };
 }
 
 function tap(e){
