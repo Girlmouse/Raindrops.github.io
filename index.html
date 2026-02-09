@@ -390,10 +390,16 @@ function loop(){
    for (let i = gs.drops.length - 1; i >= 0; i--) {
   const d = gs.drops[i];
 
+  // Move
   d.y += d.speed;
   d.x += d.drift;
 
-  // === CAUGHT ===
+  // Mark ground contact (a little past the bottom feels better visually)
+  if (!d.grounded && d.y >= ch + 20) {
+    d.grounded = true;
+  }
+
+  // If caught, fade out (both types)
   if (d.caught) {
     d.fadeOut -= 0.08;
     if (d.fadeOut <= 0) {
@@ -402,39 +408,25 @@ function loop(){
     }
   }
 
-  // === HIT GROUND ===
- if (!d.grounded && d.y >= ch + 20) {
-  d.grounded = true;
-}
-  }
-
-  // Fade glowing drops ONLY after hitting the bottom
-if (d.isGlowing) {
-  if (d.grounded) {
-    d.fadeOut -= 0.04;
-    if (d.fadeOut <= 0) {
+  // Glowing drops: ONLY fade after hitting the bottom
+  if (d.isGlowing) {
+    if (d.grounded) {
+      d.fadeOut -= 0.04;
+      if (d.fadeOut <= 0) {
+        gs.drops.splice(i, 1);
+        continue;
+      }
+    }
+  } else {
+    // Regular drops: cleanup once offscreen
+    if (d.y > ch + 20) {
       gs.drops.splice(i, 1);
       continue;
     }
   }
-} 
-// Fade regular drops when caught
-else if (d.caught) {
-  d.fadeOut -= 0.08;
-  if (d.fadeOut <= 0) {
-    gs.drops.splice(i, 1);
-    continue;
-  }
+
+  drawDrop(d);
 }
-
-  // === REGULAR DROP CLEANUP ===
-  if (!d.isGlowing && d.y > ch + 20) {
-    gs.drops.splice(i, 1);
-    continue;
-  }
-
-      drawDrop(d);
-    }
 
     // Ground splashes
     if(gs.phase==="playing"){
