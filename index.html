@@ -577,9 +577,12 @@ d.opacity *= 0.95; d.speed *= 0.98;
       c.textAlign="center";c.fillText("breathe",cw/2,ch/2-10);c.restore();
     }
 
-    if(gs.endT>1.3)gs.phase="quote";
-  }
-
+    if (gs.endT > 1.3) {
+  gs.phase = "quote";
+  gs.quoteT0 = performance.now();                 // start quote timing
+  gs.drops = gs.drops.filter(d => !d.isGlowing);  // clear glow drops (intentional)
+}
+  
   // === QUOTE SCREEN — RAINBOW WITH QUOTE ===
   if(gs.phase==="quote"){
     // Warm rainbow background
