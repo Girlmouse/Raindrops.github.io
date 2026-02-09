@@ -274,7 +274,6 @@ function getPos(e){
 function tap(e){
   e.preventDefault();initAudio();
   const p = getPos(e);
-console.log("TAP AT", p.x, p.y);
 
   if(gs.phase==="menu"){
     gs.phase="playing";gs.score=0;gs.timeLeft=DURATION;
