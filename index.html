@@ -509,7 +509,9 @@ function loop(){
 
     // Fade remaining drops
     for(let i=gs.drops.length-1;i>=0;i--){
-      const d=gs.drops[i];d.opacity*=0.95;d.speed*=0.98;
+      const d = gs.drops[i];
+if (d.isGlowing) continue;
+d.opacity *= 0.95; d.speed *= 0.98;
       if(d.opacity<0.003){gs.drops.splice(i,1);continue;}
       c.save();c.strokeStyle=`rgba(200,190,220,${d.opacity})`;c.lineWidth=d.width;c.lineCap="round";
       c.beginPath();c.moveTo(d.x,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();c.restore();
