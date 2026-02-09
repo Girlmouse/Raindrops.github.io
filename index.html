@@ -138,8 +138,23 @@ function getSize(){
     h: Math.floor(h)
   };
 }
-function resize(){const{w,h}=getSize();cv.width=w*2;cv.height=h*2;cv.style.width=w+"px";cv.style.height=h+"px";c.setTransform(2,0,0,2,0,0);}
-resize();window.addEventListener("resize",resize);
+function resize(){
+  const { w, h } = getSize();
+
+  const scale = window.devicePixelRatio || 1;
+
+  cv.width  = Math.floor(w * scale);
+  cv.height = Math.floor(h * scale);
+
+  cv.style.width  = w + "px";
+  cv.style.height = h + "px";
+
+  c.setTransform(scale, 0, 0, scale, 0, 0);
+
+  sky = null; // optional but recommended
+}
+resize();
+window.addEventListener("resize", resize);
 
 // === SKYLINE ===
 function buildSkyline(w,h){
@@ -328,9 +343,9 @@ let lastTick=Date.now();
 function loop() {
   const now = Date.now();
 
-  const rect = cv.getBoundingClientRect();
-  const cw = rect.width * 2;
-  const ch = rect.height * 2;
+ const rect = cv.getBoundingClientRect();
+const cw = rect.width;
+const ch = rect.height;
 
   // Timer
   if(gs.phase==="playing"){
