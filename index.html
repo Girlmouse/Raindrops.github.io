@@ -325,10 +325,12 @@ function drawDrop(d){
 // === MAIN LOOP ===
 let lastTick=Date.now();
 
-function loop(){
+function loop() {
   const now = Date.now();
-  const cw = cv.width / 2;
-  const ch = cv.height / 2;
+
+  const rect = cv.getBoundingClientRect();
+  const cw = rect.width * 2;
+  const ch = rect.height * 2;
 
   // Timer
   if(gs.phase==="playing"){
