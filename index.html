@@ -16,7 +16,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 </head>
 <body>
 <canvas id="g"></canvas>
-<p class="sub">RAINDROPS — A MONENT IN TIME</p>
+<p class="sub">RAINDROPS — A MOMENT IN TIME</p>
 <script>
 // === CONFIG ===
 const DROPS_TO_WIN = 30;
@@ -383,8 +383,17 @@ function loop(){
       scheduleGlow();
     }
 
-    // Cap
-    if(gs.drops.length>500) gs.drops.splice(0,gs.drops.length-500);
+    // Cap (keep glowing drops; only trim regular rain)
+const MAX_REGULAR = 500;
+let regularCount = 0;
+
+for (let i = gs.drops.length - 1; i >= 0; i--) {
+  const d = gs.drops[i];
+  if (!d.isGlowing) regularCount++;
+  if (regularCount > MAX_REGULAR) {
+    gs.drops.splice(i, 1);
+  }
+}
 
     // Update & draw drops
   for (let i = gs.drops.length - 1; i >= 0; i--) {
