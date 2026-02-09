@@ -385,27 +385,39 @@ function loop(){
     if(gs.drops.length>500) gs.drops.splice(0,gs.drops.length-500);
 
     // Update & draw drops
-    for(let i=gs.drops.length-1;i>=0;i--){
-      const d=gs.drops[i];d.y+=d.speed;d.x+=d.drift;
-      if(d.caught){d.fadeOut-=0.08;if(d.fadeOut<=0){gs.drops.splice(i,1);continue;}}
-      if(d.y > ch){
-  if(d.isGlowing){
-    d.fadeOut -= 0.06;
-    if(d.fadeOut <= 0){
-      gs.drops.splice(i,1);
+   for (let i = gs.drops.length - 1; i >= 0; i--) {
+  const d = gs.drops[i];
+
+  d.y += d.speed;
+  d.x += d.drift;
+
+  // === CAUGHT ===
+  if (d.caught) {
+    d.fadeOut -= 0.08;
+    if (d.fadeOut <= 0) {
+      gs.drops.splice(i, 1);
       continue;
     }
-  } else {
-    gs.drops.splice(i,1);
+  }
+
+  // === HIT GROUND ===
+  if (!d.grounded && d.y >= ch) {
+    d.grounded = true;
+  }
+
+  if (d.grounded) {
+    d.fadeOut -= d.isGlowing ? 0.04 : 0.08;
+    if (d.fadeOut <= 0) {
+      gs.drops.splice(i, 1);
+      continue;
+    }
+  }
+
+  // === REGULAR DROP CLEANUP ===
+  if (!d.isGlowing && d.y > ch + 20) {
+    gs.drops.splice(i, 1);
     continue;
   }
-}
-
-      // During ending, gradually slow and fade regular rain
-      if(gs.phase==="ending"&&!d.isGlowing){
-        d.opacity*=0.998;
-        d.speed*=0.999;
-      }
 
       drawDrop(d);
     }
