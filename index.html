@@ -404,9 +404,9 @@ for (let i = gs.drops.length - 1; i >= 0; i--) {
   d.x += d.drift;
 
   // Mark "hit ground" only when it passes the bottom a bit
-  if (!d.grounded && d.y >= ch + 20) {
-    d.grounded = true;
-  }
+if (!d.grounded && d.y >= ch + 20) {
+  d.grounded = true;
+}
 
   // If caught, fade out (both types)
   if (d.caught) {
