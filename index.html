@@ -116,6 +116,7 @@ function playEnd(){
 function resetRain(){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(1.0,actx.currentTime+1);}
 // === CANVAS ===
 const cv=document.getElementById("g"),c=cv.getContext("2d");
+let sky=null;
 function getSize(){
   const aspect = 16 / 9;
 
@@ -184,8 +185,6 @@ function buildSkyline(w,h){
   }
   return bs;
 }
-let sky=null;
-
 function drawSky(w,h,t){
   if(!sky)sky=buildSkyline(w,h);
   const by=h;
