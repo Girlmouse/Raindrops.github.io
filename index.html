@@ -326,7 +326,9 @@ function drawDrop(d){
 let lastTick=Date.now();
 
 function loop(){
-  const now=Date.now(),{w:cw,h:ch}=getSize();
+  const now = Date.now();
+  const cw = cv.width / 2;
+  const ch = cv.height / 2;
 
   // Timer
   if(gs.phase==="playing"){
