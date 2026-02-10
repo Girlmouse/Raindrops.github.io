@@ -280,7 +280,7 @@ function drawSky(w,h,t){
 // === GAME STATE ===
 const gs={
   drops:[],catchPs:[],ripples:[],
-  score:0,phase:"menu",timeLeft:DURATION,
+  score:0,phase:"menu",
   lastRain:0,nextGlow:0,lastGlowTime:0,
   cloudOff:0,menuPulse:0,
   endT:0,endQuote:"",
@@ -340,7 +340,7 @@ function tap(e){
   const p = getPos(e);
 
   if(gs.phase==="menu"){
-    gs.phase="playing";gs.score=0;gs.timeLeft=DURATION;
+    gs.phase="playing";gs.score=0;
     gs.drops=[];gs.catchPs=[];gs.ripples=[];
     gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;
     sky=null;scheduleGlow();
@@ -410,19 +410,7 @@ function loop() {
 const cw = rect.width;
 const ch = rect.height;
 
-  // Timer
-  if(gs.phase==="playing"){
-    const dt=now-lastTick;
-    if(dt>=1000){
-      gs.timeLeft=Math.max(0,gs.timeLeft-Math.floor(dt/1000));
-      lastTick=now-(dt%1000);
-      if(gs.timeLeft<=0){
-        gs.phase="ending";gs.endT=0;
-        gs.endQuote=QUOTES[Math.floor(Math.random()*QUOTES.length)];
-        playEnd();
-      }
-    }
-  }
+ 
 
   // === BG ===
   const bg=c.createLinearGradient(0,0,0,ch);
@@ -561,9 +549,7 @@ if (!d.grounded && d.y >= ch + 20) {
     c.fillStyle="rgba(255,255,255,0.65)";c.font="600 13px 'Helvetica Neue',sans-serif";
     c.textAlign="center";c.fillText(`${gs.score}`,barX+barW/2,barY+barH+18);
     // Timer — top right
-    const m=Math.floor(gs.timeLeft/60),s=gs.timeLeft%60;
-    c.fillStyle="rgba(255,255,255,0.5)";c.font="14px 'Helvetica Neue',sans-serif";
-    c.textAlign="right";c.fillText(`${m}:${s.toString().padStart(2,"0")}`,cw-15,22);
+    
   }
 
   // === MENU ===
