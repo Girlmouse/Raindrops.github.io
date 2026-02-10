@@ -26,7 +26,7 @@ const GLOW_MAX_GAP = 2000;    // maximum ms between glowing drops
 const HIT_R = 55;
 const DURATION = 120;          // 2 minutes — longer, more relaxed
 const DENSE = 6;               // regular drops per spawn
-
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const QUOTES = [
   "May your worries be as short lived as a fart on a windy day.",
   "May your worries be as short lived as a fart on a windy day.",
@@ -92,7 +92,7 @@ function startRainLoop(){
   const src = actx.createMediaElementSource(rainAudioEl);
 
   rainLoopGain = actx.createGain();
-  rainLoopGain.gain.value = 0.8; // adjust this
+  rainLoopGain.gain.value = IS_MOBILE ? 0.7 : 0.8; // adjust this
 
   src.connect(rainLoopGain);
   rainLoopGain.connect(actx.destination);
