@@ -85,19 +85,32 @@ function startRainLoop(){
   if (!actx) return;
   if (rainAudioEl) return;
 
+  // Make sure audio context is running (mobile sometimes suspends it)
+  if (actx.state === "suspended") actx.resume();
+
   rainAudioEl = new Audio("audio/dragon-studio-cozy-midnight-rain-02-448573.mp3");
   rainAudioEl.loop = true;
-  
+  rainAudioEl.preload = "auto";
+  rainAudioEl.playsInline = true;   // important for iOS
+  rainAudioEl.muted = false;
+  rainAudioEl.volume = IS_MOBILE ? 0.9 : 0.6; // mobile needs more
 
+  // ✅ MOBILE: play directly (most reliable)
+  if (IS_MOBILE) {
+    document.body.appendChild(Object.assign(document.createElement("div"), { style: "display:none" })); // harmless keep-alive
+    rainAudioEl.play().catch(err => console.log("Rain play failed:", err));
+    return;
+  }
+
+  // ✅ DESKTOP: route through WebAudio (lets us use gain fades if you want)
   const src = actx.createMediaElementSource(rainAudioEl);
-
   rainLoopGain = actx.createGain();
-  rainLoopGain.gain.value = IS_MOBILE ? 1.0 : 0.8; // adjust this
+  rainLoopGain.gain.value = 0.35;
 
   src.connect(rainLoopGain);
   rainLoopGain.connect(actx.destination);
 
-  rainAudioEl.play().catch(() => {});
+  rainAudioEl.play().catch(err => console.log("Rain play failed:", err));
 }
 function chime(){
   if(!actx)return;
