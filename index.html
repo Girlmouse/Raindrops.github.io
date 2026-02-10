@@ -440,7 +440,7 @@ const ch = rect.height;
       gs.lastRain=now;
     }
     if(isMenu&&now-gs.lastRain>100){
-      for(let i=0;i<2;i++){const d=mkDrop(cw,ch,false);d.opacity=0.03+Math.random()*0.06;gs.drops.push(d);}
+      for(let i=0;i<2;i++){const d=mkDrop(cw,ch,false);d.opacity=0.05+Math.random()*0.08;gs.drops.push(d);}
       gs.lastRain=now;
     }
 
