@@ -450,7 +450,7 @@ const ch = rect.height;
       scheduleGlow();
     }
 
-  // Cap (keep glowing drops; only trim regular rain)
+// Cap (keep glowing drops; only trim regular rain)
 const MAX_REGULAR = 500;
 let regularCount = 0;
 
@@ -460,7 +460,7 @@ for (let i = gs.drops.length - 1; i >= 0; i--) {
   if (!d.isGlowing) {
     regularCount++;
     if (regularCount > MAX_REGULAR) {
-      gs.drops.splice(i, 1); // only removes regular drops
+      gs.drops.splice(i, 1); // only remove regular drops
     }
   }
 }
