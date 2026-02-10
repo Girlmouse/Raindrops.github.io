@@ -69,7 +69,7 @@ function initAudio(){
   for(let i=0;i<len;i++){d3[i]=Math.random()>0.98?(Math.random()*2-1)*0.5:0;}
   const src3=actx.createBufferSource();src3.buffer=buf3;src3.loop=true;
   const f3=actx.createBiquadFilter();f3.type="highpass";f3.frequency.value=2000;
-  const g3=actx.createGain();g3.gain.value=0.06;
+  const g3=actx.createGain();g3.gain.value=0.0;
   src3.connect(f3);f3.connect(g3);g3.connect(actx.destination);src3.start();
   // Master rain gain for fading
   rainG=actx.createGain();rainG.gain.value=0.0;
@@ -132,8 +132,13 @@ function playEnd(){
     o.connect(g);g.connect(actx.destination);o.start(actx.currentTime+i*0.3);o.stop(actx.currentTime+i*0.3+4);
   });
 }
+function resetRain(){
+  // Keep the MP3 rain at your preferred level
+  if (rainLoopGain && actx) rainLoopGain.gain.linearRampToValueAtTime(0.25, actx.currentTime + 1);
 
-function resetRain(){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(1.0,actx.currentTime+1);}
+  // Make sure procedural rain stays muted
+  if (rainG && actx) rainG.gain.linearRampToValueAtTime(0.0, actx.currentTime + 0.2);
+}
 // === CANVAS ===
 const cv=document.getElementById("g"),c=cv.getContext("2d");
 let sky=null;
@@ -547,7 +552,16 @@ if (!d.grounded && d.y >= ch + 20) {
     const t=Math.min(gs.endT,1);
 
     // Fade rain audio
-     if(!gs.rainFaded&&t>0.2){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(0.05,actx.currentTime+4);gs.rainFaded=true;}
+if (!gs.rainFaded && t > 0.2) {
+  if (rainLoopGain && actx) {
+    rainLoopGain.gain.linearRampToValueAtTime(0.05, actx.currentTime + 4);
+  }
+  // keep procedural rain muted (just in case)
+  if (rainG && actx) {
+    rainG.gain.linearRampToValueAtTime(0.0, actx.currentTime + 0.2);
+  }
+  gs.rainFaded = true;
+}
 
     // Interpolate sky to warm colors
     const r1=Math.floor(8+(254-8)*t),g1=Math.floor(6+(243-6)*t),b1=Math.floor(14+(199-14)*t);
