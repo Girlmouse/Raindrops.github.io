@@ -381,7 +381,7 @@ cv.addEventListener("touchstart",tap,{passive:false});
 function drawDrop(d){
   c.save();
   if(d.isGlowing&&!d.caught){
-    d.pulsePhase+=0.04;const p=0.6+Math.sin(d.pulsePhase)*0.4;
+    d.pulsePhase+=0.04;const p=0.85+Math.sin(d.pulsePhase)*0.15;
     const og=c.createRadialGradient(d.x,d.y,0,d.x,d.y,32);
     og.addColorStop(0,`rgba(200,160,255,${0.22*p})`);og.addColorStop(0.4,`rgba(180,140,240,${0.08*p})`);og.addColorStop(1,"rgba(180,140,240,0)");
     c.fillStyle=og;c.beginPath();c.arc(d.x,d.y,32,0,Math.PI*2);c.fill();
