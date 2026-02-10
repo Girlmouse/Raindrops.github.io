@@ -153,6 +153,9 @@ function resetRain(){
   if (rainG && actx) rainG.gain.linearRampToValueAtTime(0.0, actx.currentTime + 0.2);
 }
 // === CANVAS ===
+  <audio id="rain" preload="auto" loop playsinline>
+  <source src="audio/dragon-studio-cozy-midnight-rain-02-448573.mp3" type="audio/mpeg">
+</audio>
 const cv=document.getElementById("g"),c=cv.getContext("2d");
 let sky=null;
 function getSize(){
@@ -310,9 +313,15 @@ function getPos(e){
 }
 
 function tap(e){
-  e.preventDefault();initAudio();
-  if (actx && actx.state === "suspended") actx.resume();
-  startRainLoop();
+  e.preventDefault();
+  initAudio();
+
+  const rainEl = document.getElementById("rain");
+  if (rainEl) {
+    rainEl.volume = IS_MOBILE ? 1.0 : 0.6;
+    rainEl.muted = false;
+    rainEl.play().catch(err => console.log("Rain play blocked:", err));
+  }
   const p = getPos(e);
 
   if(gs.phase==="menu"){
