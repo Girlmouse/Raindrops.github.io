@@ -53,7 +53,7 @@ function initAudio(){
     for(let i=0;i<len;i++){const w=Math.random()*2-1;d[i]=(last+(0.02*w))/1.02;last=d[i];d[i]*=3.5;}}
   const src1=actx.createBufferSource();src1.buffer=buf1;src1.loop=true;
   const f1=actx.createBiquadFilter();f1.type="lowpass";f1.frequency.value=1800;
-  const g1=actx.createGain();g1.gain.value=0.14;
+  const g1=actx.createGain();g1.gain.value=0.0;
   src1.connect(f1);f1.connect(g1);g1.connect(actx.destination);src1.start();
   // Layer 2: Rain patter (white noise, bandpassed for that crackle)
   const buf2=actx.createBuffer(2,len,sr);
@@ -61,7 +61,7 @@ function initAudio(){
     for(let i=0;i<len;i++)d[i]=(Math.random()*2-1);}
   const src2=actx.createBufferSource();src2.buffer=buf2;src2.loop=true;
   const f2=actx.createBiquadFilter();f2.type="bandpass";f2.frequency.value=3500;f2.Q.value=0.8;
-  const g2=actx.createGain();g2.gain.value=0.08;
+  const g2=actx.createGain();g2.gain.value=0.0;
   src2.connect(f2);f2.connect(g2);g2.connect(actx.destination);src2.start();
   // Layer 3: Rain drops / splatter (high freq patter)
   const buf3=actx.createBuffer(1,len,sr);
