@@ -147,7 +147,7 @@ function playEnd(){
 }
 function resetRain(){
   // Keep the MP3 rain at your preferred level
-  if (rainLoopGain && actx) rainLoopGain.gain.linearRampToValueAtTime(0.25, actx.currentTime + 1);
+  if (rainLoopGain && actx) rainLoopGain.gain.linearRampToValueAtTime(0.8, actx.currentTime + 1);
 
   // Make sure procedural rain stays muted
   if (rainG && actx) rainG.gain.linearRampToValueAtTime(0.0, actx.currentTime + 0.2);
