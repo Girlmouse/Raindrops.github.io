@@ -23,7 +23,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 <p class="sub">RAINDROPS — A MOMENT IN TIME</p>
 <script>
 // === CONFIG ===
-const DROPS_TO_WIN = 60;
+const DROPS_TO_WIN = 30;
 const RAIN_INT = 25;          // regular rain spawn interval (dense)
 const GLOW_MIN_GAP = 1000;    // minimum ms between glowing drops
 const GLOW_MAX_GAP = 2000;    // maximum ms between glowing drops
@@ -576,14 +576,11 @@ if (!d.grounded && (d.y + d.length/2) >= (ch + 2)) {
     gs.endT+=0.005;
     const t=Math.min(gs.endT,1);
 
-    // Fade rain audio
+ // Fade rain audio (HTML <audio>)
 if (!gs.rainFaded && t > 0.2) {
-  if (rainLoopGain && actx) {
-    rainLoopGain.gain.linearRampToValueAtTime(0.05, actx.currentTime + 4);
-  }
-  // keep procedural rain muted (just in case)
-  if (rainG && actx) {
-    rainG.gain.linearRampToValueAtTime(0.0, actx.currentTime + 0.2);
+  const rainEl = document.getElementById("rain");
+  if (rainEl) {
+    rainEl.volume = 0.0;   // or 0.05 if you want it barely audible
   }
   gs.rainFaded = true;
 }
