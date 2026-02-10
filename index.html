@@ -93,7 +93,7 @@ function startRainLoop(){
   rainAudioEl.preload = "auto";
   rainAudioEl.playsInline = true;   // important for iOS
   rainAudioEl.muted = false;
-  rainAudioEl.volume = IS_MOBILE ? 1.0 : 0.8; // mobile needs more
+  rainAudioEl.volume = IS_MOBILE ? 5.0 : 0.8; // mobile needs more
 
   // ✅ MOBILE: play directly (most reliable)
   if (IS_MOBILE) {
