@@ -471,7 +471,7 @@ for (let i = gs.drops.length - 1; i >= 0; i--) {
   d.x += d.drift;
 
   // Mark "hit ground" only when it passes the bottom a bit
-if (!d.grounded && d.y >= ch + 20) {
+if (!d.grounded && (d.y + d.length/2) >= (ch + 2)) {
   d.grounded = true;
 }
 
