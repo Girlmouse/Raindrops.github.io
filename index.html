@@ -92,7 +92,7 @@ function startRainLoop(){
   const src = actx.createMediaElementSource(rainAudioEl);
 
   rainLoopGain = actx.createGain();
-  rainLoopGain.gain.value = 0.55; // adjust this
+  rainLoopGain.gain.value = 0.75; // adjust this
 
   src.connect(rainLoopGain);
   rainLoopGain.connect(actx.destination);
