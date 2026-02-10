@@ -23,7 +23,7 @@ const DROPS_TO_WIN = 60;
 const RAIN_INT = 75;          // regular rain spawn interval (dense)
 const GLOW_MIN_GAP = 1000;    // minimum ms between glowing drops
 const GLOW_MAX_GAP = 2000;    // maximum ms between glowing drops
-const HIT_R = 5000;
+const HIT_R = 45;
 const DURATION = 120;          // 2 minutes — longer, more relaxed
 const DENSE = 6;               // regular drops per spawn
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -87,7 +87,7 @@ function startRainLoop(){
 
   rainAudioEl = new Audio("audio/dragon-studio-cozy-midnight-rain-02-448573.mp3");
   rainAudioEl.loop = true;
-  rainAudioEl.crossOrigin = "anonymous";
+  
 
   const src = actx.createMediaElementSource(rainAudioEl);
 
@@ -298,6 +298,7 @@ function getPos(e){
 
 function tap(e){
   e.preventDefault();initAudio();
+  if (actx && actx.state === "suspended") actx.resume();
   startRainLoop();
   const p = getPos(e);
 
