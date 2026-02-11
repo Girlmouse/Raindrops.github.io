@@ -44,7 +44,7 @@ const QUOTES = [
 ];
 
 // === AUDIO ===
-let actx=null,started=false,rainSrc=null,rainG=null;
+let actx=null,started=false:
 
 function initAudio(){
   if(started)return;try{
@@ -107,7 +107,6 @@ function chime(){
 
 function playEnd(){
   if(!actx)return;
-  if(rainG)rainG.gain.linearRampToValueAtTime(0.04,actx.currentTime+5);
   [261.6,329.6,392,523.2].forEach((f,i)=>{
     const o=actx.createOscillator(),g=actx.createGain();
     o.type="sine";o.frequency.value=f;
