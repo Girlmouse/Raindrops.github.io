@@ -326,7 +326,7 @@ function drawDrop(d){
     og.addColorStop(0,`rgba(200,160,255,${0.07*p})`);og.addColorStop(0.4,`rgba(180,140,240,${0.03*p})`);og.addColorStop(1,"rgba(180,140,240,0)");
     c.fillStyle=og;c.beginPath();c.arc(d.x,d.y,22,0,Math.PI*2);c.fill();
     const ig=c.createRadialGradient(d.x,d.y,0,d.x,d.y,12);
-    ig.addColorStop(0,`rgba(225,210,255,${0.45*p})`);ig.addColorStop(1,`rgba(180,150,240,${0.12*p})`);
+    ig.addColorStop(0,`rgba(225,210,255,${0.20*p})`);ig.addColorStop(1,`rgba(180,150,240,${0.05*p})`);
     c.fillStyle=ig;c.beginPath();c.arc(d.x,d.y,12,0,Math.PI*2);c.fill();
     c.strokeStyle=`rgba(225,210,255,${0.8*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";
     c.beginPath();c.moveTo(d.x,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();
