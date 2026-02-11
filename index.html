@@ -223,7 +223,7 @@ const gs={
   lastRain:0,nextGlow:0,lastGlowTime:0,
   cloudOff:0,menuPulse:0,
   endT:0,endQuote:"",
-  dimAlpha:0,rainFaded:false,rbPs:null,
+  dimAlpha:0,rainFaded:false,
 };
 
 // Schedule next glow drop
@@ -348,8 +348,6 @@ function loop() {
  const rect = cv.getBoundingClientRect();
 const cw = rect.width;
 const ch = rect.height;
-
- 
 
   // === BG ===
   const bg=c.createLinearGradient(0,0,0,ch);
@@ -544,30 +542,6 @@ d.opacity *= 0.95;
       d.y+=d.speed;
     }
 
-    // Spawn rainbow particles after 30%
-    if(t>0.3){
-      if(!gs.rbPs||gs.rbPs.length===0){
-        gs.rbPs=[];
-        const cols=["#f9a8d4","#fbbf24","#a78bfa","#34d399","#60a5fa","#fb923c","#f472b6"];
-        for(let i=0;i<120;i++)gs.rbPs.push({
-          x:Math.random()*cw,y:Math.random()*ch,size:3+Math.random()*7,
-          color:cols[Math.floor(Math.random()*cols.length)],
-          speed:0.2+Math.random()*0.6,wobble:Math.random()*Math.PI*2,
-          wobbleSpd:0.01+Math.random()*0.02,opacity:0,
-          target:0.3+Math.random()*0.5,shape:Math.random()>0.5?"c":"d",
-        });
-      }
-      const po=(t-0.3)/0.7;
-      gs.rbPs.forEach(p=>{
-        p.wobble+=p.wobbleSpd;p.y-=p.speed*0.4;p.x+=Math.sin(p.wobble)*0.4;
-        if(p.y<-10)p.y=ch+10;
-        c.save();c.globalAlpha=p.target*po*0.6;c.fillStyle=p.color;
-        if(p.shape==="c"){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();}
-        else{c.translate(p.x,p.y);c.rotate(Math.PI/4);c.fillRect(-p.size/2,-p.size/2,p.size,p.size);}
-        c.restore();
-      });
-    }
-
     // "breathe" text
     if(t>0.6){
       c.save();c.globalAlpha=Math.min((t-0.6)/0.3,1)*0.5;
@@ -592,64 +566,96 @@ d.opacity *= 0.95;
     c.fillStyle=sg;c.beginPath();c.arc(sx,sy,90,0,Math.PI*2);c.fill();
     c.fillStyle="rgba(255,255,255,0.85)";c.beginPath();c.arc(sx,sy,22,0,Math.PI*2);c.fill();
 
-    // Floating particles
-    if(gs.rbPs)gs.rbPs.forEach(p=>{
-      p.wobble+=p.wobbleSpd;p.y-=p.speed*0.25;p.x+=Math.sin(p.wobble)*0.3;
-      if(p.opacity<p.target)p.opacity+=0.008;
-      if(p.y<-10){p.y=ch+10;p.x=Math.random()*cw;}
-      c.save();c.globalAlpha=p.opacity;c.fillStyle=p.color;
-      if(p.shape==="c"){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();}
-      else{c.translate(p.x,p.y);c.rotate(Math.PI/4);c.fillRect(-p.size/2,-p.size/2,p.size,p.size);}
-      c.restore();
-    });
-
-    // Quote with soft background pill
+ // Quote with soft background pill — fade in, read, pause, float up & disappear
 c.save();
 
-// Wrap by pixel width (not character count)
-const maxW = cw * 0.72;
-const words = gs.endQuote.split(" ");
-let lines = [];
-let cur = "";
+// --- timing (seconds) ---
+const qt = (performance.now() - (gs.quoteT0 || performance.now())) / 1000;
+const FADE_IN = 0.6;
+const READ = 5.0;
+const PAUSE = 0.8;
+const FADE_OUT = 1.2;
+const LIFT_PX = 55;
 
-c.font = "italic 600 22px 'Helvetica Neue',sans-serif";
-for (const w of words) {
-  const test = cur ? cur + " " + w : w;
-  if (c.measureText(test).width > maxW && cur) {
-    lines.push(cur);
-    cur = w;
-  } else {
-    cur = test;
-  }
+const total = FADE_IN + READ + PAUSE + FADE_OUT;
+
+// alpha + lift
+let a = 1;
+let lift = 0;
+
+// fade in
+if (qt < FADE_IN) {
+  a = qt / FADE_IN;
 }
-if (cur) lines.push(cur);
+// hold (read + pause)
+else if (qt < FADE_IN + READ + PAUSE) {
+  a = 1;
+}
+// fade out + float up
+else if (qt < total) {
+  const u = (qt - (FADE_IN + READ + PAUSE)) / FADE_OUT; // 0..1
+  a = 1 - u;
+  lift = u * LIFT_PX;
+}
+// gone
+else {
+  a = 0;
+  gs.quoteGone = true; // optional latch
+}
 
-// Pill sizing + true vertical centering
-const lh = 34;
-const padX = 34;
-const padY = 22;
+// Only draw quote if visible
+if (!gs.quoteGone && a > 0.001) {
+  // Wrap by pixel width (not character count)
+  const maxW = cw * 0.72;
+  const words = gs.endQuote.split(" ");
+  let lines = [];
+  let cur = "";
 
-const textW = Math.min(maxW, cw * 0.85);
-const qtW = textW + padX * 2;
-const qtH = lines.length * lh + padY * 2;
+  // NEW FONT (change here)
+  c.font = '600 22px "Palatino Linotype", Palatino, Georgia, serif';
 
-const qtX = (cw - qtW) / 2;
-const qtY = ch * 0.50 - qtH / 2; // centered a touch lower than exact middle
+  for (const w of words) {
+    const test = cur ? cur + " " + w : w;
+    if (c.measureText(test).width > maxW && cur) {
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = test;
+    }
+  }
+  if (cur) lines.push(cur);
 
-// Background pill
-c.fillStyle = "rgba(255,255,255,0.40)";
-c.beginPath();
-c.roundRect(qtX, qtY, qtW, qtH, 16);
-c.fill();
+  // Pill sizing + true vertical centering
+  const lh = 34;
+  const padX = 34;
+  const padY = 22;
 
-// Quote text (centered inside pill)
-c.fillStyle = "rgba(70,35,100,0.90)";
-c.textAlign = "center";
-c.textBaseline = "middle";
+  const textW = Math.min(maxW, cw * 0.85);
+  const qtW = textW + padX * 2;
+  const qtH = lines.length * lh + padY * 2;
 
-const startY = qtY + qtH / 2 - ((lines.length - 1) * lh) / 2;
-for (let i = 0; i < lines.length; i++) {
-  c.fillText(lines[i], cw / 2, startY + i * lh);
+  const qtX = (cw - qtW) / 2;
+  const qtY = ch * 0.50 - qtH / 2 - lift; // <-- floats up during fade-out
+
+  // Background pill (fades with quote)
+  c.globalAlpha = a * 0.95;
+  c.fillStyle = "rgba(255,255,255,0.40)";
+  c.beginPath();
+  c.roundRect(qtX, qtY, qtW, qtH, 16);
+  c.fill();
+
+  // Quote text (fades with quote)
+  c.globalAlpha = a;
+  c.fillStyle = "rgba(70,35,100,0.92)";
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+
+  const startY = qtY + qtH / 2 - ((lines.length - 1) * lh) / 2;
+  for (let i = 0; i < lines.length; i++) {
+    c.fillText(lines[i], cw / 2, startY + i * lh);
+  }
+
+  c.globalAlpha = 1;
 }
 
 c.restore();
