@@ -511,7 +511,7 @@ if (!d.grounded && (d.y + d.length/2) >= (ch + 2)) {
     c.fillStyle="rgba(220,200,245,0.3)";c.font="11px 'Helvetica Neue',sans-serif";
     c.fillText("city at night",cw/2,ch/2+52);
   }
-// === ENDING SEQUENCE — RAINBOW TRANSITION ===
+// === ENDING SEQUENCE TRANSITION ===
   if(gs.phase==="ending"){
     gs.endT+=0.005;
     const t=Math.min(gs.endT,1);
@@ -582,13 +582,9 @@ d.opacity *= 0.95;
    }
   }    
   
-  // === QUOTE SCREEN — RAINBOW WITH QUOTE ===
+  // === QUOTE SCREEN WITH QUOTE ===
   if(gs.phase==="quote"){
-    // Warm rainbow background
-    const rg=c.createLinearGradient(0,0,0,ch);
-    rg.addColorStop(0,"#fef3c7");rg.addColorStop(0.35,"#fde68a");rg.addColorStop(0.65,"#fbcfe8");rg.addColorStop(1,"#ddd6fe");
-    c.fillStyle=rg;c.fillRect(0,0,cw,ch);
-
+ 
     // Sun
     const sx=cw*0.75,sy=ch*0.2;
     const sg=c.createRadialGradient(sx,sy,0,sx,sy,90);
