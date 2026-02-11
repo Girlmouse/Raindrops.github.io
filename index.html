@@ -11,7 +11,7 @@ body{background:#050810;display:flex;flex-direction:column;align-items:center;ju
 min-height:100vh;min-height:100dvh;font-family:'Helvetica Neue',-apple-system,sans-serif;
 user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden;}
 canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px rgba(180,140,255,0.06);}
-.sub{color:rgba(255,255,255,0.25);font-size:12px;margin-top:10px;letter-spacing:2px;text-align:center;}
+.sub{color:rgba(255,255,255,0.25);font-size:12px;margin-top:10px;letter-spacing:2px;text-align:center;}f
 </style>
 </head>
 <body>
@@ -281,7 +281,7 @@ function tap(e){
   if(gs.phase==="menu"){
     gs.phase="playing";gs.score=0;
     gs.drops=[];gs.catchPs=[];gs.ripples=[];
-    gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;
+    gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;
     sky=null;scheduleGlow();
     resetRain();lastTick=Date.now();return;
   }
