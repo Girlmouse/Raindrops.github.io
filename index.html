@@ -622,17 +622,34 @@ if (!gs.quoteGone && a > 0.001 && gs.endQuote) {
   const lh = 34;
   const blockH = lines.length * lh;
   const baseY = ch * 0.50 - blockH / 2 - lift;
+// Fortune-cookie "paper" background
+const padX = 34;
+const padY = 20;
+const maxTextW = cw * 0.72;
+const pillW = Math.min(maxTextW + padX * 2, cw * 0.88);
+const pillH = blockH + padY * 2;
 
-  c.globalAlpha = a;
-  c.fillStyle = "rgba(245,235,255,0.90)";   // bright text, no background pill
-  c.textAlign = "center";
-  c.textBaseline = "middle";
+const pillX = (cw - pillW) / 2;
+const pillY = (ch * 0.50 - pillH / 2) - lift;
 
-  for (let i = 0; i < lines.length; i++) {
-    c.fillText(lines[i], cw / 2, baseY + i * lh);
-  }
+c.globalAlpha = a * 0.92;
+c.fillStyle = "rgba(255,248,232,0.55)";
+c.beginPath();
+c.roundRect(pillX, pillY, pillW, pillH, 18);
+c.fill();
 
-  c.globalAlpha = 1;
+c.globalAlpha = a * 0.75;
+c.strokeStyle = "rgba(120,80,150,0.22)";
+c.lineWidth = 1;
+c.stroke();
+
+c.globalAlpha = a; // restore for text
+c.fillStyle = "rgba(245,235,255,0.90)";
+c.textAlign = "center";
+c.textBaseline = "middle";
+
+for (let i = 0; i < lines.length; i++) {
+  c.fillText(lines[i], cw / 2, baseY + i * lh);
 }
 
 c.restore();
@@ -642,7 +659,7 @@ c.restore();
    c.fillStyle="rgba(90,50,130,0.85)";
     c.beginPath();c.roundRect(btnX,btnY,btnW,btnH,17);c.fill();
     c.fillStyle="rgba(253,224,71,0.95)"; c.font="600 13px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";c.fillText("tap to continue",cw/2,btnY+btnH/2+4);
+    c.textAlign="center";c.fillText("Tap to continue",cw/2,btnY+btnH/2+4);
   }
 
   requestAnimationFrame(loop);
