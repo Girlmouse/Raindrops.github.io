@@ -11,12 +11,12 @@ body{background:#050810;display:flex;flex-direction:column;align-items:center;ju
 min-height:100vh;min-height:100dvh;font-family:'Helvetica Neue',-apple-system,sans-serif;
 user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden;}
 canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px rgba(180,140,255,0.06);}
-.sub{color:rgba(255,255,255,0.25);font-size:12px;margin-top:10px;letter-spacing:2px;text-align:center;}f
+.sub{color:rgba(255,255,255,0.25);font-size:12px;margin-top:10px;letter-spacing:2px;text-align:center;}
 </style>
 </head>
 <body>
 <canvas id="g"></canvas>
- <audio id="rain" preload="metadata" loop playsinline>
+ <audio id="rain" preload="metadata" loop playsinline>f
   <source src="audio/Rain-ambiance-city.mp3" type="audio/mpeg">
 </audio>
   
@@ -152,7 +152,7 @@ function resize(){
 resize();
 window.addEventListener("resize", resize);
 
-// === SKYLINE ===
+// === SKYLINE ORIGINAL ===
 function buildSkyline(w,h){
   const bs=[];let x=-5;
   while(x<w+20){
@@ -216,6 +216,51 @@ function drawSky(w,h,t){
   });
 }
 
+ // === FOREST BACKGROUND (placeholder silhouettes) ===
+function drawForestBG(w, h, t) {
+  // Subtle mist glow near horizon
+  const mist = c.createLinearGradient(0, h*0.35, 0, h);
+  mist.addColorStop(0, "rgba(180,140,240,0.00)");
+  mist.addColorStop(1, "rgba(180,140,240,0.06)");
+  c.fillStyle = mist;
+  c.fillRect(0, 0, w, h);
+
+  // Far treeline (soft silhouettes)
+  c.fillStyle = "rgba(10,8,16,0.85)";
+  c.beginPath();
+  c.moveTo(0, h*0.62);
+  for (let x = 0; x <= w; x += 18) {
+    const y = h*0.62 - (8 + 10*Math.sin((x*0.015) + t*0.00025));
+    c.lineTo(x, y);
+  }
+  c.lineTo(w, h);
+  c.lineTo(0, h);
+  c.closePath();
+  c.fill();
+
+  // Mid trees (darker, taller bumps)
+  c.fillStyle = "rgba(6,5,12,0.92)";
+  c.beginPath();
+  c.moveTo(0, h*0.72);
+  for (let x = 0; x <= w; x += 22) {
+    const y = h*0.72 - (14 + 18*Math.sin((x*0.011) + 1.7 + t*0.00018));
+    c.lineTo(x, y);
+  }
+  c.lineTo(w, h);
+  c.lineTo(0, h);
+  c.closePath();
+  c.fill();
+
+  // Foreground bushes strip
+  c.fillStyle = "rgba(3,3,8,0.95)";
+  c.fillRect(0, h*0.82, w, h*0.18);
+
+  // Porch roof / overhang (your “standing under shelter” vibe)
+  c.fillStyle = "rgba(0,0,0,0.55)";
+  c.fillRect(0, 0, w, h*0.12);
+  c.fillStyle = "rgba(0,0,0,0.18)";
+  c.fillRect(0, h*0.12, w, 6);
+}
 // === GAME STATE ===
 const gs={
   drops:[],catchPs:[],ripples:[],
@@ -367,7 +412,7 @@ const ch = rect.height;
     c.restore();
 
     // Skyline
-    drawSky(cw,ch,now);
+    drawForestBG(cw, ch, now);
 
     // === RAIN SPAWNING ===
     const canSpawnRain=gs.phase==="playing"||gs.phase==="ending";
@@ -507,7 +552,7 @@ if (!d.grounded && (d.y + d.length/2) >= (ch + 2)) {
     c.fillText("catch the glowing drops",cw/2,ch/2+32);
     // Scene name
     c.fillStyle="rgba(220,200,245,0.3)";c.font="11px 'Helvetica Neue',sans-serif";
-    c.fillText("city at night",cw/2,ch/2+52);
+    c.fillText("forest", cw/2, ch/2+52);
   }
 // === ENDING SEQUENCE TRANSITION ===
   if(gs.phase==="ending"){
