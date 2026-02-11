@@ -566,53 +566,47 @@ d.opacity *= 0.95;
     c.fillStyle=sg;c.beginPath();c.arc(sx,sy,90,0,Math.PI*2);c.fill();
     c.fillStyle="rgba(255,255,255,0.85)";c.beginPath();c.arc(sx,sy,22,0,Math.PI*2);c.fill();
 
- // Quote with soft background pill — fade in, read, pause, float up & disappear
+// Quote (text only) — fade in, hold ~10s, dissolve upward
 c.save();
 
-// --- timing (seconds) ---
-const qt = (performance.now() - (gs.quoteT0 || performance.now())) / 1000;
+if (!gs.quoteT0) gs.quoteT0 = performance.now();
+if (gs.quoteGone == null) gs.quoteGone = false;
+
+const qt = (performance.now() - gs.quoteT0) / 1000;
+
+// timing (seconds)
 const FADE_IN = 0.6;
-const READ = 5.0;
-const PAUSE = 0.8;
+const HOLD = 10.0;
 const FADE_OUT = 1.2;
 const LIFT_PX = 55;
 
-const total = FADE_IN + READ + PAUSE + FADE_OUT;
+const total = FADE_IN + HOLD + FADE_OUT;
 
-// alpha + lift
 let a = 1;
 let lift = 0;
 
-// fade in
 if (qt < FADE_IN) {
-  a = qt / FADE_IN;
-}
-// hold (read + pause)
-else if (qt < FADE_IN + READ + PAUSE) {
-  a = 1;
-}
-// fade out + float up
-else if (qt < total) {
-  const u = (qt - (FADE_IN + READ + PAUSE)) / FADE_OUT; // 0..1
-  a = 1 - u;
-  lift = u * LIFT_PX;
-}
-// gone
-else {
+  a = qt / FADE_IN;                 // fade in
+} else if (qt < FADE_IN + HOLD) {
+  a = 1;                            // hold
+} else if (qt < total) {
+  const u = (qt - (FADE_IN + HOLD)) / FADE_OUT; // 0..1
+  a = 1 - u;                        // fade out
+  lift = u * LIFT_PX;               // drift up
+} else {
   a = 0;
-  gs.quoteGone = true; // optional latch
+  gs.quoteGone = true;              // after dissolve, never draw again
 }
 
-// Only draw quote if visible
-if (!gs.quoteGone && a > 0.001) {
+if (!gs.quoteGone && a > 0.001 && gs.endQuote) {
   // Wrap by pixel width (not character count)
   const maxW = cw * 0.72;
   const words = gs.endQuote.split(" ");
   let lines = [];
   let cur = "";
 
-  // NEW FONT (change here)
-  c.font = '600 22px "Palatino Linotype", Palatino, Georgia, serif';
+  // (font change later — keep current for now)
+  c.font = "italic 600 22px 'Helvetica Neue',sans-serif";
 
   for (const w of words) {
     const test = cur ? cur + " " + w : w;
@@ -625,34 +619,17 @@ if (!gs.quoteGone && a > 0.001) {
   }
   if (cur) lines.push(cur);
 
-  // Pill sizing + true vertical centering
   const lh = 34;
-  const padX = 34;
-  const padY = 22;
+  const blockH = lines.length * lh;
+  const baseY = ch * 0.50 - blockH / 2 - lift;
 
-  const textW = Math.min(maxW, cw * 0.85);
-  const qtW = textW + padX * 2;
-  const qtH = lines.length * lh + padY * 2;
-
-  const qtX = (cw - qtW) / 2;
-  const qtY = ch * 0.50 - qtH / 2 - lift; // <-- floats up during fade-out
-
-  // Background pill (fades with quote)
-  c.globalAlpha = a * 0.95;
-  c.fillStyle = "rgba(255,255,255,0.40)";
-  c.beginPath();
-  c.roundRect(qtX, qtY, qtW, qtH, 16);
-  c.fill();
-
-  // Quote text (fades with quote)
   c.globalAlpha = a;
-  c.fillStyle = "rgba(70,35,100,0.92)";
+  c.fillStyle = "rgba(245,235,255,0.90)";   // bright text, no background pill
   c.textAlign = "center";
   c.textBaseline = "middle";
 
-  const startY = qtY + qtH / 2 - ((lines.length - 1) * lh) / 2;
   for (let i = 0; i < lines.length; i++) {
-    c.fillText(lines[i], cw / 2, startY + i * lh);
+    c.fillText(lines[i], cw / 2, baseY + i * lh);
   }
 
   c.globalAlpha = 1;
