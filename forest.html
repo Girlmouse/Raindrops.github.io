@@ -45,19 +45,22 @@ let actx=null,started=false,rainSrc=null,rainG=null;
 
 function initAudio(){
   if(started) return;
+
   try{
     actx = new (window.AudioContext||window.webkitAudioContext)();
-    started = true;
-
-    if (actx.state === "suspended") actx.resume();
 
     // Load MP3 rain
     const audio = new Audio("audio/night-forest-rain.mp3");
     audio.loop = true;
     audio.preload = "auto";
-    audio.playsInline = true;   // important on iOS
+    audio.playsInline = true;
     audio.muted = false;
     audio.volume = 1.0;
+
+    // Helpful diagnostics (you can remove later)
+    audio.addEventListener("error", () => {
+      console.log("Rain MP3 error:", audio.error, audio.src);
+    });
 
     const src = actx.createMediaElementSource(audio);
     rainG = actx.createGain();
@@ -66,10 +69,23 @@ function initAudio(){
     src.connect(rainG);
     rainG.connect(actx.destination);
 
-    audio.play().catch(err => console.log("Rain MP3 play failed:", err));
+    // Only mark started after everything is wired
+    started = true;
     rainSrc = audio;
+
+    // Resume context, THEN play (more reliable on mobile/Chrome)
+    const resumePromise = (actx.state === "suspended") ? actx.resume() : Promise.resolve();
+    resumePromise.then(() => {
+      return audio.play();
+    }).catch(err => {
+      console.log("Rain MP3 play failed:", err);
+      // allow retry next tap
+      started = false;
+    });
+
   }catch(e){
     console.log("initAudio error:", e);
+    started = false; // allow retry
   }
 }
 
