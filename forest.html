@@ -44,17 +44,34 @@ const QUOTES = [
 let actx=null,started=false,rainSrc=null,rainG=null;
 
 function initAudio(){
-  if(started)return;try{
-  actx=new(window.AudioContext||window.webkitAudioContext)();started=true;
-  // Load MP3 rain + crickets
-  const audio=new Audio('audio/night-forest-rain.mp3');
-  audio.loop=true;audio.crossOrigin="anonymous";
-  const src=actx.createMediaElementSource(audio);
-  rainG=actx.createGain();rainG.gain.value=1.0;
-  src.connect(rainG);rainG.connect(actx.destination);
-  audio.play();
-  rainSrc=audio;
-  }catch(e){}}
+  if(started) return;
+  try{
+    actx = new (window.AudioContext||window.webkitAudioContext)();
+    started = true;
+
+    if (actx.state === "suspended") actx.resume();
+
+    // Load MP3 rain
+    const audio = new Audio("audio/night-forest-rain.mp3");
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.playsInline = true;   // important on iOS
+    audio.muted = false;
+    audio.volume = 1.0;
+
+    const src = actx.createMediaElementSource(audio);
+    rainG = actx.createGain();
+    rainG.gain.value = 1.0;
+
+    src.connect(rainG);
+    rainG.connect(actx.destination);
+
+    audio.play().catch(err => console.log("Rain MP3 play failed:", err));
+    rainSrc = audio;
+  }catch(e){
+    console.log("initAudio error:", e);
+  }
+}
 
 // Harp-like pluck sound
 function chime(){
