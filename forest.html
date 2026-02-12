@@ -124,24 +124,58 @@ function playEnd(){
 function resetRain(){if(rainG&&actx){rainG.gain.cancelScheduledValues(actx.currentTime);rainG.gain.linearRampToValueAtTime(1.0,actx.currentTime+1);}}
 
 // === CANVAS ===
-const cv = document.getElementById("g");
-const c = cv.getContext("2d");
+const cv=document.getElementById("g"),c=cv.getContext("2d");
+  // --- roundRect fallback (fixes Firefox / older browsers) ---
+if (!c.roundRect) {
+  c.roundRect = function(x, y, w, h, r) {
+    r = Math.min(r || 0, w / 2, h / 2);
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y,     x + w, y + h, r);
+    this.arcTo(x + w, y + h, x,     y + h, r);
+    this.arcTo(x,     y + h, x,     y,     r);
+    this.arcTo(x,     y,     x + w, y,     r);
+    this.closePath();
+    return this;
+  };
+}
+let sky=null;
+function getSize(){
+  const aspect = 16 / 9;
 
+  const vw = window.innerWidth;
+  const vh = window.visualViewport
+    ? window.visualViewport.height
+    : window.innerHeight;
+
+  let w = vw * 0.98;
+  let h = vh * 0.90;
+
+  if (w / h > aspect) {
+    w = h * aspect;
+  } else {
+    h = w / aspect;
+  }
+
+  return {
+    w: Math.floor(w),
+    h: Math.floor(h)
+  };
+}
 function resize(){
-  const DPR = window.devicePixelRatio || 1;
+  const { w, h } = getSize();
 
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  const scale = window.devicePixelRatio || 1;
 
-  cv.width  = w * DPR;
-  cv.height = h * DPR;
+  cv.width  = Math.floor(w * scale);
+  cv.height = Math.floor(h * scale);
 
   cv.style.width  = w + "px";
   cv.style.height = h + "px";
 
-  c.setTransform(DPR, 0, 0, DPR, 0, 0);
-}
+  c.setTransform(scale, 0, 0, scale, 0, 0);
 
+  sky = null; // optional but recommended
+}
 resize();
 window.addEventListener("resize", resize);
 
