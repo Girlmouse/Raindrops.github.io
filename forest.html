@@ -366,6 +366,19 @@ function loop(){
     }
     c.restore();
 
+     // Crescent moon
+    const moonX=cw*0.82,moonY=ch*0.12,moonR=14;
+    // Moon glow
+    const mg=c.createRadialGradient(moonX,moonY,moonR*0.5,moonX,moonY,moonR*4);
+    mg.addColorStop(0,"rgba(220,230,200,0.08)");mg.addColorStop(1,"rgba(220,230,200,0)");
+    c.fillStyle=mg;c.beginPath();c.arc(moonX,moonY,moonR*4,0,Math.PI*2);c.fill();
+    // Full circle
+    c.fillStyle="rgba(230,235,215,0.85)";
+    c.beginPath();c.arc(moonX,moonY,moonR,0,Math.PI*2);c.fill();
+    // Shadow circle (creates crescent by overlapping)
+    c.fillStyle="#060e08"; // match your background color
+    c.beginPath();c.arc(moonX+8,moonY-2,moonR-1,0,Math.PI*2);c.fill();
+
     // Forest
     drawForest(cw,ch,now);
 
@@ -399,6 +412,27 @@ function loop(){
       }
       if(gs.phase==="ending"&&!d.isGlowing){d.opacity*=0.998;d.speed*=0.999;}
       drawDrop(d);
+
+        // Ground line
+  c.fillStyle="rgba(10,20,12,0.8)";
+  c.fillRect(0,baseY-3,w,5);
+}
+
+     // Bushes along the ground
+  const bushColors=["rgba(8,22,10,0.9)","rgba(12,28,14,0.85)","rgba(6,18,8,0.9)"];
+  const bushes=[
+    {x:w*0.05,r:18},{x:w*0.15,r:14},{x:w*0.28,r:20},
+    {x:w*0.42,r:12},{x:w*0.55,r:16},{x:w*0.65,r:22},
+    {x:w*0.78,r:13},{x:w*0.88,r:17},{x:w*0.95,r:15},
+  ];
+  bushes.forEach((b,i)=>{
+    c.fillStyle=bushColors[i%bushColors.length];
+    // Main blob
+    c.beginPath();c.ellipse(b.x,baseY-2,b.r,b.r*0.6,0,0,Math.PI*2);c.fill();
+    // Side blob
+    c.beginPath();c.ellipse(b.x-b.r*0.5,baseY-1,b.r*0.6,b.r*0.4,0,0,Math.PI*2);c.fill();
+    c.beginPath();c.ellipse(b.x+b.r*0.6,baseY,b.r*0.5,b.r*0.35,0,0,Math.PI*2);c.fill();
+  });
     }
 
     // Ripples
