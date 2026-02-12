@@ -16,6 +16,9 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 </head>
 <body>
 <canvas id="g"></canvas>
+<audio id="rain" preload="auto" loop playsinline>
+  <source src="audio/night-forest-rain.mp3" type="audio/mpeg">
+</audio>
 <p class="sub">RAINDROPS — A moment in time</p>
 <script>
 // === CONFIG ===
@@ -25,6 +28,11 @@ const GLOW_MIN_GAP = 1000;
 const GLOW_MAX_GAP = 3000;
 const HIT_R = 80;
 const DENSE = 12;
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+// Guardrails for glowing drops - spawn between 15% and 85% of width
+const GLOW_MIN_X = 0.15;
+const GLOW_MAX_X = 0.85;
 
 const QUOTES = [
   "The forest remembers what we forget.",
@@ -40,67 +48,27 @@ const QUOTES = [
 ];
 
 // === AUDIO ===
-let actx=null,started=false,rainSrc=null,rainG=null;
+let actx=null,started=false;
 
 function initAudio(){
   if(started) return;
-
   try{
     actx = new (window.AudioContext||window.webkitAudioContext)();
-
-    // Load MP3 rain
-    const audio = new Audio("audio/night-forest-rain.mp3");
-    audio.loop = true;
-    audio.preload = "auto";
-    audio.playsInline = true;
-    audio.muted = false;
-    audio.volume = 1.0;
-
-    // Helpful diagnostics (you can remove later)
-    audio.addEventListener("error", () => {
-      console.log("Rain MP3 error:", audio.error, audio.src);
-    });
-
-    const src = actx.createMediaElementSource(audio);
-    rainG = actx.createGain();
-    rainG.gain.value = 1.0;
-
-    src.connect(rainG);
-    rainG.connect(actx.destination);
-
-    // Only mark started after everything is wired
     started = true;
-    rainSrc = audio;
-
-    // Resume context, THEN play (more reliable on mobile/Chrome)
-    const resumePromise = (actx.state === "suspended") ? actx.resume() : Promise.resolve();
-    resumePromise.then(() => {
-      return audio.play();
-    }).catch(err => {
-      console.log("Rain MP3 play failed:", err);
-      // allow retry next tap
-      started = false;
-    });
-
-  }catch(e){
-    console.log("initAudio error:", e);
-    started = false; // allow retry
-  }
+  }catch(e){}
 }
 
 // Harp-like pluck sound
 function chime(){
   if(!actx)return;
-  const notes=[392,440,523.2,587.3,659.2,784,880]; // G4-A5 pentatonic-ish
+  const notes=[392,440,523.2,587.3,659.2,784,880];
   const f=notes[Math.floor(Math.random()*notes.length)];
-  // Plucked string: triangle wave with fast attack, medium decay
   const o=actx.createOscillator(),g=actx.createGain();
   o.type="triangle";o.frequency.value=f;
   g.gain.setValueAtTime(0.18,actx.currentTime);
   g.gain.exponentialRampToValueAtTime(0.01,actx.currentTime+0.5);
   g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+1.0);
   o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+1.0);
-  // Harmonic overtone for richness
   const o2=actx.createOscillator(),g2=actx.createGain();
   o2.type="sine";o2.frequency.value=f*2;
   g2.gain.setValueAtTime(0.06,actx.currentTime);
@@ -110,7 +78,16 @@ function chime(){
 
 function playEnd(){
   if(!actx)return;
-  if(rainG)rainG.gain.linearRampToValueAtTime(0.05,actx.currentTime+4);
+  // Fade out rain audio
+  const rainEl=document.getElementById("rain");
+  if(rainEl){
+    let vol=rainEl.volume;
+    const fade=setInterval(()=>{
+      vol-=0.02;
+      if(vol<=0.05){rainEl.volume=0.05;clearInterval(fade);}
+      else rainEl.volume=vol;
+    },100);
+  }
   [261.6,329.6,392,523.2].forEach((f,i)=>{
     const o=actx.createOscillator(),g=actx.createGain();
     o.type="triangle";o.frequency.value=f;
@@ -121,11 +98,17 @@ function playEnd(){
   });
 }
 
-function resetRain(){if(rainG&&actx){rainG.gain.cancelScheduledValues(actx.currentTime);rainG.gain.linearRampToValueAtTime(1.0,actx.currentTime+1);}}
+function resetRain(){
+  const rainEl=document.getElementById("rain");
+  if(!rainEl)return;
+  rainEl.volume=IS_MOBILE?1.0:0.6;
+  rainEl.muted=false;
+}
 
 // === CANVAS ===
 const cv=document.getElementById("g"),c=cv.getContext("2d");
-  // --- roundRect fallback (fixes Firefox / older browsers) ---
+
+// roundRect fallback for Firefox/older browsers
 if (!c.roundRect) {
   c.roundRect = function(x, y, w, h, r) {
     r = Math.min(r || 0, w / 2, h / 2);
@@ -138,31 +121,28 @@ if (!c.roundRect) {
     return this;
   };
 }
+
 let sky=null;
-function getSize(){
-  const aspect = 16 / 9;
+let forest=null;
 
+function resize(){
   const vw = window.innerWidth;
-  const vh = window.visualViewport
-    ? window.visualViewport.height
-    : window.innerHeight;
-
-  let w = vw * 0.98;
-  let h = vh * 0.90;
-
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  
+  // Full screen with small margin
+  let w = vw * 0.99;
+  let h = vh * 0.94;
+  
+  // Keep 16:9 aspect ratio
+  const aspect = 16 / 9;
   if (w / h > aspect) {
     w = h * aspect;
   } else {
     h = w / aspect;
   }
-
-  return {
-    w: Math.floor(w),
-    h: Math.floor(h)
-  };
-}
-function resize(){
-  const { w, h } = getSize();
+  
+  w = Math.floor(w);
+  h = Math.floor(h);
 
   const scale = window.devicePixelRatio || 1;
 
@@ -174,7 +154,8 @@ function resize(){
 
   c.setTransform(scale, 0, 0, scale, 0, 0);
 
-  sky = null; // optional but recommended
+  sky = null;
+  forest = null;
 }
 resize();
 window.addEventListener("resize", resize);
@@ -182,7 +163,6 @@ window.addEventListener("resize", resize);
 // === FOREST TREES ===
 function buildForest(w,h){
   const trees=[];
-  // Background layer (smaller, darker)
   for(let i=0;i<18;i++){
     trees.push({
       x:-20+Math.random()*(w+40),
@@ -192,7 +172,6 @@ function buildForest(w,h){
       shade:Math.random()*0.15,
     });
   }
-  // Midground layer
   for(let i=0;i<12;i++){
     trees.push({
       x:-20+Math.random()*(w+40),
@@ -202,7 +181,6 @@ function buildForest(w,h){
       shade:Math.random()*0.1,
     });
   }
-  // Foreground layer (tall silhouettes)
   for(let i=0;i<8;i++){
     trees.push({
       x:-10+Math.random()*(w+20),
@@ -215,13 +193,11 @@ function buildForest(w,h){
   trees.sort((a,b)=>a.layer-b.layer);
   return trees;
 }
-let forest=null;
 
 function drawForest(w,h,t){
   if(!forest)forest=buildForest(w,h);
   const baseY=h;
 
-  // Ground fog
   const fog=c.createLinearGradient(0,h*0.7,0,h);
   fog.addColorStop(0,"rgba(15,30,18,0)");
   fog.addColorStop(1,"rgba(15,30,18,0.3)");
@@ -232,28 +208,21 @@ function drawForest(w,h,t){
     const green=[12,16,8][tr.layer];
     const alpha=darkness-tr.shade;
 
-    // Trunk
     const trunkW=tr.w*0.08+2;
     c.fillStyle=`rgba(${green-4},${green},${green-6},${alpha})`;
     c.fillRect(tr.x-trunkW/2,baseY-tr.h*0.4,trunkW,tr.h*0.4);
 
-    // Canopy — layered ellipses for organic look
     c.fillStyle=`rgba(${green},${green+8},${green-2},${alpha})`;
-    // Main canopy
     c.beginPath();
     c.ellipse(tr.x,baseY-tr.h*0.55,tr.w*0.5,tr.h*0.35,0,0,Math.PI*2);
     c.fill();
-    // Top tuft
     c.beginPath();
     c.ellipse(tr.x-tr.w*0.1,baseY-tr.h*0.75,tr.w*0.3,tr.h*0.2,0,0,Math.PI*2);
     c.fill();
-    // Side tuft
     c.beginPath();
     c.ellipse(tr.x+tr.w*0.2,baseY-tr.h*0.5,tr.w*0.25,tr.h*0.18,0,0,Math.PI*2);
     c.fill();
 
-    // Occasional subtle sway (very gentle)
-    // Fireflies near trees at certain layers
     if(tr.layer===1&&Math.sin(t*0.001+tr.x*0.1)>0.85){
       const fx=tr.x+Math.sin(t*0.002+tr.x)*15;
       const fy=baseY-tr.h*0.4+Math.cos(t*0.0015+tr.x)*10;
@@ -265,16 +234,14 @@ function drawForest(w,h,t){
     }
   });
 
-  // Ground line
   c.fillStyle="rgba(10,20,12,0.8)";
   c.fillRect(0,baseY-3,w,5);
 
-  // Bushes along the ground
   const bushColors=["rgba(8,22,10,0.9)","rgba(12,28,14,0.85)","rgba(6,18,8,0.9)"];
   const bushes=[
-    {x:w*0.05,r:18},{x:w*0.15,r:14},{x:w*0.28,r:20},
-    {x:w*0.42,r:12},{x:w*0.55,r:16},{x:w*0.65,r:22},
-    {x:w*0.78,r:13},{x:w*0.88,r:17},{x:w*0.95,r:15},
+    {x:w*0.05,r:32},{x:w*0.15,r:25},{x:w*0.28,r:36},
+    {x:w*0.42,r:22},{x:w*0.55,r:29},{x:w*0.65,r:40},
+    {x:w*0.78,r:24},{x:w*0.88,r:31},{x:w*0.95,r:27},
   ];
   bushes.forEach((b,i)=>{
     c.fillStyle=bushColors[i%bushColors.length];
@@ -300,15 +267,27 @@ function scheduleGlow(){
 
 function mkDrop(w,h,forceGlow){
   const gl=forceGlow||false;
+  let xPos;
+  if(gl){
+    // Glowing drops spawn in middle area only (15% to 85% of width)
+    xPos = w * GLOW_MIN_X + Math.random() * w * (GLOW_MAX_X - GLOW_MIN_X);
+  } else {
+    xPos = Math.random() * w;
+  }
   return{
-    x:Math.random()*w,y:-10-Math.random()*50,
-    speed:gl?0.9+Math.random()*0.5:2.5+Math.random()*2.5,
-    length:gl?16+Math.random()*10:3+Math.random()*8,
-    opacity:gl?1:0.08+Math.random()*0.18,
-    isGlowing:gl,pulsePhase:Math.random()*Math.PI*2,
-    width:gl?2.5:0.5+Math.random()*0.7,
-    caught:false,fadeOut:1,
-    drift:(Math.random()-0.5)*0.15,
+    x: xPos,
+    y: -10 - Math.random() * 50,
+    // Glowing drops slower, regular rain faster (like city scene)
+    speed: gl ? 1.2 + Math.random() * 0.5 : 8.0 + Math.random() * 6.0,
+    length: gl ? 18 + Math.random() * 10 : 3 + Math.random() * 8,
+    opacity: gl ? 1 : 0.08 + Math.random() * 0.18,
+    isGlowing: gl,
+    pulsePhase: Math.random() * Math.PI * 2,
+    width: gl ? 2.5 : 0.5 + Math.random() * 0.7,
+    caught: false,
+    fadeOut: 1,
+    grounded: false,
+    drift: (Math.random() - 0.5) * 0.15,
   };
 }
 
@@ -326,15 +305,22 @@ function mkRip(x,y){return{x,y,radius:3,opacity:0.45,speed:1};}
 
 // === INPUT ===
 function getPos(e){
-  const r=cv.getBoundingClientRect();
-  const sx=(cv.width/2)/r.width,sy=(cv.height/2)/r.height;
-  const px=e.touches?e.touches[0].clientX:e.clientX;
-  const py=e.touches?e.touches[0].clientY:e.clientY;
-  return{x:(px-r.left)*sx,y:(py-r.top)*sy};
+  const r = cv.getBoundingClientRect();
+  const px = e.touches ? e.touches[0].clientX : e.clientX;
+  const py = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (px - r.left), y: (py - r.top) };
 }
 
 function tap(e){
-  e.preventDefault();initAudio();
+  e.preventDefault();
+  initAudio();
+
+  const rainEl=document.getElementById("rain");
+  if(rainEl){
+    rainEl.volume=IS_MOBILE?1.0:0.6;
+    rainEl.muted=false;
+    rainEl.play().catch(err=>console.log("Rain play blocked:",err));
+  }
 
   if(gs.phase==="menu"){
     gs.phase="playing";gs.score=0;
@@ -380,7 +366,6 @@ function drawDrop(d){
   c.save();
   if(d.isGlowing&&!d.caught){
     d.pulsePhase+=0.04;const p=0.6+Math.sin(d.pulsePhase)*0.4;
-    // Green glow
     const og=c.createRadialGradient(d.x,d.y,0,d.x,d.y,32);
     og.addColorStop(0,`rgba(130,230,150,${0.22*p})`);og.addColorStop(0.4,`rgba(100,200,120,${0.08*p})`);og.addColorStop(1,"rgba(100,200,120,0)");
     c.fillStyle=og;c.beginPath();c.arc(d.x,d.y,32,0,Math.PI*2);c.fill();
@@ -402,8 +387,12 @@ function drawDrop(d){
 let lastTick=Date.now();
 
 function loop(){
-  const now=Date.now(),{w:cw,h:ch}=getSize();
-
+  const now=Date.now();
+  
+  // Get canvas size from bounding rect (like city scene)
+  const rect = cv.getBoundingClientRect();
+  const cw = rect.width;
+  const ch = rect.height;
 
   // === BG ===
   const bg=c.createLinearGradient(0,0,0,ch);
@@ -422,51 +411,90 @@ function loop(){
     }
     c.restore();
 
-     // Crescent moon
+    // Crescent moon
     const moonX=cw*0.82,moonY=ch*0.12,moonR=14;
-    // Moon glow
     const mg=c.createRadialGradient(moonX,moonY,moonR*0.5,moonX,moonY,moonR*4);
     mg.addColorStop(0,"rgba(220,230,200,0.08)");mg.addColorStop(1,"rgba(220,230,200,0)");
     c.fillStyle=mg;c.beginPath();c.arc(moonX,moonY,moonR*4,0,Math.PI*2);c.fill();
-    // Full circle
     c.fillStyle="rgba(230,235,215,0.85)";
     c.beginPath();c.arc(moonX,moonY,moonR,0,Math.PI*2);c.fill();
-    // Shadow circle (creates crescent by overlapping)
-    c.fillStyle="#060e08"; // match your background color
+    c.fillStyle="#060e08";
     c.beginPath();c.arc(moonX+8,moonY-2,moonR-1,0,Math.PI*2);c.fill();
 
     // Forest
     drawForest(cw,ch,now);
 
-    // === RAIN ===
-    const canSpawn=gs.phase==="playing"||gs.phase==="ending";
+    // === RAIN SPAWNING ===
+    const canSpawnRain=gs.phase==="playing"||gs.phase==="ending";
     const isMenu=gs.phase==="menu"||gs.phase==="quote";
 
-    if(canSpawn&&now-gs.lastRain>RAIN_INT){
+    if(canSpawnRain&&now-gs.lastRain>RAIN_INT){
       for(let i=0;i<DENSE;i++) gs.drops.push(mkDrop(cw,ch,false));
       gs.lastRain=now;
     }
-    if(isMenu&&now-gs.lastRain>120){
-      for(let i=0;i<2;i++){const d=mkDrop(cw,ch,false);d.opacity=0.04+Math.random()*0.08;gs.drops.push(d);}
+    if(isMenu&&now-gs.lastRain>100){
+      for(let i=0;i<2;i++){const d=mkDrop(cw,ch,false);d.opacity=0.05+Math.random()*0.10;gs.drops.push(d);}
       gs.lastRain=now;
     }
 
-    // Glow spawning
+    // Glow drop spawning
     if(gs.phase==="playing"&&now>=gs.nextGlow){
       gs.drops.push(mkDrop(cw,ch,true));
       scheduleGlow();
     }
 
-    if(gs.drops.length>500) gs.drops.splice(0,gs.drops.length-500);
-
-    for(let i=gs.drops.length-1;i>=0;i--){
-      const d=gs.drops[i];d.y+=d.speed;d.x+=d.drift;
-      if(d.caught){d.fadeOut-=0.08;if(d.fadeOut<=0){gs.drops.splice(i,1);continue;}}
-      if(d.y>ch+20){gs.drops.splice(i,1);continue;}
-      if((gs.phase==="ending"||gs.phase==="quote")&&d.isGlowing&&!d.caught){
-        d.fadeOut-=0.02;if(d.fadeOut<=0){gs.drops.splice(i,1);continue;}
+    // Cap regular drops only
+    const MAX_REGULAR = 500;
+    let regularCount = 0;
+    for (let i = gs.drops.length - 1; i >= 0; i--) {
+      const d = gs.drops[i];
+      if (!d.isGlowing) {
+        regularCount++;
+        if (regularCount > MAX_REGULAR) {
+          gs.drops.splice(i, 1);
+        }
       }
-      if(gs.phase==="ending"&&!d.isGlowing){d.opacity*=0.998;d.speed*=0.999;}
+    }
+
+    // Update & draw drops (same logic as city scene)
+    for (let i = gs.drops.length - 1; i >= 0; i--) {
+      const d = gs.drops[i];
+
+      // Move
+      d.y += d.speed;
+      d.x += d.drift;
+
+      // Mark "hit ground" when it passes the bottom
+      if (!d.grounded && (d.y + d.length/2) >= (ch + 2)) {
+        d.grounded = true;
+      }
+
+      // If caught, fade out
+      if (d.caught) {
+        d.fadeOut -= 0.08;
+        if (d.fadeOut <= 0) {
+          gs.drops.splice(i, 1);
+          continue;
+        }
+      }
+
+      // Glowing drops: only fade AFTER hitting the bottom
+      if (d.isGlowing) {
+        if (d.grounded) {
+          d.fadeOut -= 0.04;
+          if (d.fadeOut <= 0) {
+            gs.drops.splice(i, 1);
+            continue;
+          }
+        }
+      } else {
+        // Regular drops: remove once they go offscreen
+        if (d.y > ch + 20) {
+          gs.drops.splice(i, 1);
+          continue;
+        }
+      }
+
       drawDrop(d);
     }
 
@@ -489,7 +517,6 @@ function loop(){
 
   // === PLAYING UI ===
   if(gs.phase==="playing"){
-    // Vertical progress bar — left side
     const barW=5,barH=ch*0.6,barX=12,barY=(ch-barH)/2;
     const prog=Math.min(gs.score/DROPS_TO_WIN,1);
     c.fillStyle="rgba(255,255,255,0.06)";
@@ -504,7 +531,6 @@ function loop(){
     }
     c.fillStyle="rgba(255,255,255,0.65)";c.font="600 13px 'Helvetica Neue',sans-serif";
     c.textAlign="center";c.fillText(`${gs.score}`,barX+barW/2,barY+barH+18);
-  
   }
 
   // === MENU ===
@@ -521,14 +547,13 @@ function loop(){
     c.fillText("forest",cw/2,ch/2+52);
   }
 
-  // === ENDING SEQUENCE — RAINBOW TRANSITION ===
+  // === ENDING SEQUENCE ===
   if(gs.phase==="ending"){
     gs.endT+=0.005;
     const t=Math.min(gs.endT,1);
 
-    if(!gs.rainFaded&&t>0.2){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(0.05,actx.currentTime+4);gs.rainFaded=true;}
+    gs.rainFaded=true;
 
-    // Interpolate to warm forest clearing
     const r1=Math.floor(6+(240-6)*t),g1=Math.floor(14+(253-14)*t),b1=Math.floor(8+(244-8)*t);
     const r2=Math.floor(15+(220-15)*t),g2=Math.floor(38+(247-38)*t),b2=Math.floor(20+(195-20)*t);
     const tbg=c.createLinearGradient(0,0,0,ch);
@@ -577,26 +602,22 @@ function loop(){
 
   // === QUOTE SCREEN ===
   if(gs.phase==="quote"){
-    // Warm forest clearing
     const rg=c.createLinearGradient(0,0,0,ch);
     rg.addColorStop(0,"#f0fdf4");rg.addColorStop(0.35,"#bbf7d0");rg.addColorStop(0.65,"#dcfce7");rg.addColorStop(1,"#fef9c3");
     c.fillStyle=rg;c.fillRect(0,0,cw,ch);
 
-    // Sun through canopy
     const sx=cw*0.6,sy=ch*0.18;
     const sg=c.createRadialGradient(sx,sy,0,sx,sy,100);
     sg.addColorStop(0,"rgba(180,230,80,0.6)");sg.addColorStop(0.3,"rgba(180,230,80,0.2)");sg.addColorStop(1,"rgba(180,230,80,0)");
     c.fillStyle=sg;c.beginPath();c.arc(sx,sy,100,0,Math.PI*2);c.fill();
     c.fillStyle="rgba(255,255,255,0.8)";c.beginPath();c.arc(sx,sy,20,0,Math.PI*2);c.fill();
 
-    // Rainbow arc — corner to corner
     const arcY=ch*1.6,arcR=cw*0.9;
     ["#22c55e","#86efac","#fbbf24","#a3e635","#34d399","#6ee7b7"].forEach((col,i)=>{
       c.save();c.strokeStyle=col;c.globalAlpha=0.3;c.lineWidth=12;
       c.beginPath();c.arc(cw*0.5,arcY,arcR+i*14,Math.PI+0.15,Math.PI*2-0.15);c.stroke();c.restore();
     });
 
-    // Floating particles
     if(gs.rbPs)gs.rbPs.forEach(p=>{
       p.wobble+=p.wobbleSpd;p.y-=p.speed*0.25;p.x+=Math.sin(p.wobble)*0.3;
       if(p.opacity<p.target)p.opacity+=0.008;
@@ -607,7 +628,6 @@ function loop(){
       c.restore();
     });
 
-    // Quote with background pill
     c.save();
     const words=gs.endQuote.split(" ");
     let lines=[],line="";
@@ -622,7 +642,6 @@ function loop(){
     lines.forEach((l,i)=>c.fillText(l,cw/2,qtY+28+i*lh));
     c.restore();
 
-    // Tap to continue button
     const btnW=140,btnH=34,btnX=(cw-btnW)/2,btnY=ch-55;
     c.fillStyle="rgba(255,255,255,0.3)";
     c.beginPath();c.roundRect(btnX,btnY,btnW,btnH,17);c.fill();
