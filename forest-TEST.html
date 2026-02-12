@@ -168,15 +168,7 @@ let forest=null;
 function drawForest(w,h,t){
   if(!forest)forest=buildForest(w,h);
   const baseY=h;
-
-  // Subtle mist glow near horizon
-  const mist = c.createLinearGradient(0, h*0.35, 0, h);
-  mist.addColorStop(0, "rgba(180,140,240,0.00)");
-  mist.addColorStop(1, "rgba(180,140,240,0.06)");
-  c.fillStyle = mist;
-  c.fillRect(0, 0, w, h);
-
- 
+  
   // Porch roof / overhang (your “standing under shelter” vibe)
   c.fillStyle = "rgba(0,0,0,0.55)";
   c.fillRect(0, 0, w, h*0.12);
