@@ -210,7 +210,7 @@ function drawForest(w,h,t){
     }
   });
 
- // Ground line
+  // Ground line
   c.fillStyle="rgba(10,20,12,0.8)";
   c.fillRect(0,baseY-3,w,5);
 
@@ -223,9 +223,7 @@ function drawForest(w,h,t){
   ];
   bushes.forEach((b,i)=>{
     c.fillStyle=bushColors[i%bushColors.length];
-    // Main blob
     c.beginPath();c.ellipse(b.x,baseY-2,b.r,b.r*0.6,0,0,Math.PI*2);c.fill();
-    // Side blob
     c.beginPath();c.ellipse(b.x-b.r*0.5,baseY-1,b.r*0.6,b.r*0.4,0,0,Math.PI*2);c.fill();
     c.beginPath();c.ellipse(b.x+b.r*0.6,baseY,b.r*0.5,b.r*0.35,0,0,Math.PI*2);c.fill();
   });
