@@ -124,15 +124,26 @@ function playEnd(){
 function resetRain(){if(rainG&&actx){rainG.gain.cancelScheduledValues(actx.currentTime);rainG.gain.linearRampToValueAtTime(1.0,actx.currentTime+1);}}
 
 // === CANVAS ===
-const cv=document.getElementById("g"),c=cv.getContext("2d");
-function getSize(){
-  const mw=Math.min(window.innerWidth*0.98,700);
-  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.90;
-  let w=mw,h=w/(16/9);if(h>mh){h=mh;w=h*(16/9);}if(w>mw){w=mw;h=w/(16/9);}
-  return{w:Math.floor(w),h:Math.floor(h)};
+const cv = document.getElementById("g");
+const c = cv.getContext("2d");
+
+function resize(){
+  const DPR = window.devicePixelRatio || 1;
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  cv.width  = w * DPR;
+  cv.height = h * DPR;
+
+  cv.style.width  = w + "px";
+  cv.style.height = h + "px";
+
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
-function resize(){const{w,h}=getSize();cv.width=w*2;cv.height=h*2;cv.style.width=w+"px";cv.style.height=h+"px";c.setTransform(2,0,0,2,0,0);}
-resize();window.addEventListener("resize",resize);
+
+resize();
+window.addEventListener("resize", resize);
 
 // === FOREST TREES ===
 function buildForest(w,h){
