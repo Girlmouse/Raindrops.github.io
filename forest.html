@@ -47,7 +47,7 @@ function initAudio(){
   if(started)return;try{
   actx=new(window.AudioContext||window.webkitAudioContext)();started=true;
   // Load MP3 rain + crickets
-  const audio=new Audio('audio/night forest rain.mp3');
+  const audio=new Audio('audio/night-forest-rain.mp3');
   audio.loop=true;audio.crossOrigin="anonymous";
   const src=actx.createMediaElementSource(audio);
   rainG=actx.createGain();rainG.gain.value=1.0;
