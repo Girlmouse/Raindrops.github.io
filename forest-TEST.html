@@ -166,19 +166,6 @@ function drawForest(w,h,t){
   if(!forest)forest=buildForest(w,h);
   const baseY=h;
 
-  // Far tree peaks (break the smooth hill silhouette)
-c.fillStyle = "rgba(8,6,14,0.95)";
-for (let i = 0; i < 40; i++) {
-  const x = i * (w / 40);
-  const treeH = 30 + Math.random() * 40;
-  const baseY = h * 0.62;
-  c.beginPath();
-  c.moveTo(x, baseY);
-  c.lineTo(x + 8, baseY - treeH);
-  c.lineTo(x + 16, baseY);
-  c.closePath();
-  c.fill();
-}
 
   // Ground fog
   const fog=c.createLinearGradient(0,h*0.7,0,h);
@@ -210,6 +197,20 @@ for (let i = 0; i < 40; i++) {
     c.beginPath();
     c.ellipse(tr.x+tr.w*0.2,baseY-tr.h*0.5,tr.w*0.25,tr.h*0.18,0,0,Math.PI*2);
     c.fill();
+
+     // Far tree peaks (break the smooth hill silhouette)
+c.fillStyle = "rgba(8,6,14,0.95)";
+for (let i = 0; i < 40; i++) {
+  const x = i * (w / 40);
+  const treeH = 30 + Math.random() * 40;
+  const baseY = h * 0.62;
+  c.beginPath();
+  c.moveTo(x, baseY);
+  c.lineTo(x + 8, baseY - treeH);
+  c.lineTo(x + 16, baseY);
+  c.closePath();
+  c.fill();
+}
 
     // Occasional subtle sway (very gentle)
     // Fireflies near trees at certain layers
