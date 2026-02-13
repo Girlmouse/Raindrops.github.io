@@ -20,12 +20,14 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 <script>
 // === CONFIG ===
 const DROPS_TO_WIN = 30;
-const RAIN_INT = 65;
+const RAIN_INT = 35; // faster rain spawn
 const GLOW_MIN_GAP = 3000;
 const GLOW_MAX_GAP = 6000;
 const HIT_R = 45;
-const DURATION = 240;
-const DENSE = 5;
+const DENSE = 12; // more drops per spawn
+
+// Guardrails for glowing drops - keep centered
+const GLOW_MARGIN = 0.15; // 15% margin on each side
 
 const QUOTES = [
   "Above the clouds, there is always light.",
@@ -119,52 +121,96 @@ function playEnd(){
 
 function resetRain(){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(1.0,actx.currentTime+1);}
 
-// === CANVAS ===
+// === CANVAS (larger like forest) ===
 const cv=document.getElementById("g"),c=cv.getContext("2d");
 function getSize(){
-  const mw=Math.min(window.innerWidth*0.98,700);
-  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.90;
-  let w=mw,h=w/(16/9);if(h>mh){h=mh;w=h*(16/9);}if(w>mw){w=mw;h=w/(16/9);}
+  const mw=Math.min(window.innerWidth*0.98,800);
+  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.88;
+  let w=mw,h=w/(4/3);
+  if(h>mh){h=mh;w=h*(4/3);}
+  if(w>mw){w=mw;h=w/(4/3);}
   return{w:Math.floor(w),h:Math.floor(h)};
 }
 function resize(){const{w,h}=getSize();cv.width=w*2;cv.height=h*2;cv.style.width=w+"px";cv.style.height=h+"px";c.setTransform(2,0,0,2,0,0);}
 resize();window.addEventListener("resize",resize);
 
-// === MOUNTAINS ===
+// === MOUNTAINS (rounder, rough edges, dark peaks with trees) ===
 function buildMountains(w,h){
   const layers=[];
-  // Far range — faded, low
+  
+  // Far range — darker with snow-capped peaks
   const far=[];
   let fx=0;
   while(fx<w+60){
-    const pw=60+Math.random()*100;
-    const ph=h*0.15+Math.random()*h*0.15;
-    far.push({x:fx,w:pw,h:ph});
-    fx+=pw*0.6;
+    const pw=80+Math.random()*120;
+    const ph=h*0.12+Math.random()*h*0.12;
+    // Generate rough edge points for rounder shape
+    const roughness = [];
+    for(let r=0;r<8;r++) roughness.push((Math.random()-0.5)*10);
+    // Pre-generate tree positions
+    const treeData = [];
+    if(Math.random()>0.7){
+      const treeCount = 3 + Math.floor(Math.random()*4);
+      for(let t=0;t<treeCount;t++){
+        treeData.push({
+          offsetX: -0.15 + Math.random()*0.3,
+          offsetY: Math.random()*0.2,
+          size: 8 + Math.random()*12
+        });
+      }
+    }
+    far.push({x:fx,w:pw,h:ph,rough:roughness,treeData:treeData,hasSnow:true});
+    fx+=pw*0.55;
   }
-  layers.push({peaks:far,color:"rgba(25,28,40,0.6)",y:h*0.55});
+  layers.push({peaks:far,baseColor:{r:30,g:32,b:35},opacity:0.75,y:h*0.35});
 
-  // Mid range
+  // Mid range — medium charcoal with slight green
   const mid=[];
   let mx=0;
   while(mx<w+80){
-    const pw=80+Math.random()*120;
-    const ph=h*0.2+Math.random()*h*0.2;
-    mid.push({x:mx,w:pw,h:ph});
-    mx+=pw*0.55;
+    const pw=100+Math.random()*140;
+    const ph=h*0.18+Math.random()*h*0.15;
+    const roughness = [];
+    for(let r=0;r<10;r++) roughness.push((Math.random()-0.5)*15);
+    const treeData = [];
+    if(Math.random()>0.5){
+      const treeCount = 3 + Math.floor(Math.random()*4);
+      for(let t=0;t<treeCount;t++){
+        treeData.push({
+          offsetX: -0.15 + Math.random()*0.3,
+          offsetY: Math.random()*0.2,
+          size: 8 + Math.random()*12
+        });
+      }
+    }
+    mid.push({x:mx,w:pw,h:ph,rough:roughness,treeData:treeData,hasSnow:false});
+    mx+=pw*0.5;
   }
-  layers.push({peaks:mid,color:"rgba(18,20,30,0.8)",y:h*0.6});
+  layers.push({peaks:mid,baseColor:{r:22,g:24,b:26},opacity:0.85,y:h*0.42});
 
-  // Near range — tallest, darkest
+  // Near range — very dark, like shadows
   const near=[];
   let nx=-30;
   while(nx<w+100){
-    const pw=100+Math.random()*140;
-    const ph=h*0.3+Math.random()*h*0.25;
-    near.push({x:nx,w:pw,h:ph});
-    nx+=pw*0.5;
+    const pw=120+Math.random()*160;
+    const ph=h*0.25+Math.random()*h*0.2;
+    const roughness = [];
+    for(let r=0;r<12;r++) roughness.push((Math.random()-0.5)*20);
+    const treeData = [];
+    if(Math.random()>0.3){
+      const treeCount = 3 + Math.floor(Math.random()*4);
+      for(let t=0;t<treeCount;t++){
+        treeData.push({
+          offsetX: -0.15 + Math.random()*0.3,
+          offsetY: Math.random()*0.2,
+          size: 8 + Math.random()*12
+        });
+      }
+    }
+    near.push({x:nx,w:pw,h:ph,rough:roughness,treeData:treeData});
+    nx+=pw*0.45;
   }
-  layers.push({peaks:near,color:"rgba(12,14,22,0.92)",y:h*0.65});
+  layers.push({peaks:near,baseColor:{r:10,g:10,b:10},opacity:0.98,y:h*0.5});
 
   return layers;
 }
@@ -175,57 +221,671 @@ function drawMountains(w,h,t){
 
   mountains.forEach(layer=>{
     layer.peaks.forEach(pk=>{
-      c.fillStyle=layer.color;
+      const bc=layer.baseColor;
+      c.fillStyle=`rgba(${bc.r},${bc.g},${bc.b},${layer.opacity})`;
       c.beginPath();
+      
+      // Start at base left
       c.moveTo(pk.x,layer.y);
-      // Left slope
-      c.lineTo(pk.x+pk.w*0.4+Math.random()*0.5,layer.y-pk.h*0.7);
-      // Peak
-      c.lineTo(pk.x+pk.w*0.5,layer.y-pk.h);
-      // Right slope
-      c.lineTo(pk.x+pk.w*0.65,layer.y-pk.h*0.6);
+      
+      // Draw rounder mountain with bezier curves and rough edges
+      const segments = pk.rough.length;
+      const peakX = pk.x + pk.w * 0.5;
+      const peakY = layer.y - pk.h;
+      
+      // Left slope with curves
+      for(let i=0;i<segments/2;i++){
+        const t = i/(segments/2);
+        const x = pk.x + t*(peakX-pk.x);
+        const y = layer.y - Math.sin(t*Math.PI/2)*pk.h + pk.rough[i];
+        if(i===0) c.lineTo(x,y);
+        else c.lineTo(x,y);
+      }
+      
+      // Peak area (rounded)
+      c.quadraticCurveTo(peakX, peakY-10, peakX+pk.w*0.1, peakY+pk.h*0.05);
+      
+      // Right slope with curves  
+      for(let i=segments/2;i<segments;i++){
+        const t = (i-segments/2)/(segments/2);
+        const x = peakX + pk.w*0.1 + t*(pk.x+pk.w-peakX-pk.w*0.1);
+        const y = layer.y - Math.cos(t*Math.PI/2)*pk.h*0.9 + pk.rough[i];
+        c.lineTo(x,y);
+      }
+      
       c.lineTo(pk.x+pk.w,layer.y);
       c.closePath();
       c.fill();
 
-      // Snow cap on taller peaks
-      if(pk.h>h*0.3){
-        c.fillStyle="rgba(180,190,210,0.12)";
+      // Lighter gray/green peak coloring
+      const peakGrad = c.createLinearGradient(peakX, peakY, peakX, peakY+pk.h*0.3);
+      peakGrad.addColorStop(0,"rgba(75,82,78,0.5)");
+      peakGrad.addColorStop(0.5,"rgba(60,68,62,0.3)");
+      peakGrad.addColorStop(1,"rgba(45,50,48,0)");
+      c.fillStyle=peakGrad;
+      c.beginPath();
+      c.moveTo(peakX-pk.w*0.15,layer.y-pk.h*0.6);
+      c.quadraticCurveTo(peakX, peakY-5, peakX+pk.w*0.2, layer.y-pk.h*0.55);
+      c.lineTo(peakX+pk.w*0.1, layer.y-pk.h*0.3);
+      c.lineTo(peakX-pk.w*0.1, layer.y-pk.h*0.3);
+      c.closePath();
+      c.fill();
+
+      // Snow caps on far layer peaks
+      if(pk.hasSnow){
+        c.fillStyle="rgba(200,205,215,0.6)";
         c.beginPath();
-        c.moveTo(pk.x+pk.w*0.42,layer.y-pk.h*0.8);
-        c.lineTo(pk.x+pk.w*0.5,layer.y-pk.h);
-        c.lineTo(pk.x+pk.w*0.58,layer.y-pk.h*0.82);
+        c.moveTo(peakX-pk.w*0.08, layer.y-pk.h*0.85);
+        c.quadraticCurveTo(peakX, peakY-8, peakX+pk.w*0.12, layer.y-pk.h*0.82);
+        c.lineTo(peakX+pk.w*0.06, layer.y-pk.h*0.7);
+        c.lineTo(peakX-pk.w*0.04, layer.y-pk.h*0.72);
         c.closePath();
         c.fill();
       }
+
+      // Tree tops on some peaks (using pre-generated positions)
+      if(pk.treeData && pk.treeData.length > 0 && pk.h > h*0.15){
+        const treeY = layer.y - pk.h*0.4;
+        c.fillStyle=`rgba(20,35,25,${layer.opacity*0.8})`;
+        pk.treeData.forEach(tree=>{
+          const tx = peakX + pk.w*tree.offsetX;
+          const ty = treeY + pk.h*tree.offsetY;
+          const th = tree.size;
+          // Simple triangle tree
+          c.beginPath();
+          c.moveTo(tx, ty);
+          c.lineTo(tx-th*0.4, ty+th);
+          c.lineTo(tx+th*0.4, ty+th);
+          c.closePath();
+          c.fill();
+        });
+      }
     });
   });
+}
 
-  // Ground / valley floor
-  c.fillStyle="rgba(12,14,22,0.85)";
-  c.fillRect(0,h*0.65,w,h*0.35);
+// === MOON ===
+function drawMoon(w,h,t){
+  const mx = w*0.10; // left upper corner
+  const my = h*0.06; // higher up
+  const mr = 20; // smaller
+  
+  // Outer glow
+  const glow = c.createRadialGradient(mx,my,mr*0.5,mx,my,mr*3);
+  glow.addColorStop(0,"rgba(220,225,235,0.15)");
+  glow.addColorStop(0.5,"rgba(200,210,225,0.05)");
+  glow.addColorStop(1,"rgba(180,190,210,0)");
+  c.fillStyle=glow;
+  c.beginPath();
+  c.arc(mx,my,mr*3,0,Math.PI*2);
+  c.fill();
+  
+  // Moon body
+  const moonGrad = c.createRadialGradient(mx-3,my-3,0,mx,my,mr);
+  moonGrad.addColorStop(0,"rgba(245,245,250,0.95)");
+  moonGrad.addColorStop(0.7,"rgba(220,225,235,0.9)");
+  moonGrad.addColorStop(1,"rgba(200,205,220,0.85)");
+  c.fillStyle=moonGrad;
+  c.beginPath();
+  c.arc(mx,my,mr,0,Math.PI*2);
+  c.fill();
+  
+  // Subtle craters (smaller)
+  c.fillStyle="rgba(180,185,200,0.2)";
+  c.beginPath();c.arc(mx-5,my-3,3,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(mx+6,my+5,3,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(mx+2,my-6,2,0,Math.PI*2);c.fill();
+}
 
-  // Fog layers that drift
-  for(let i=0;i<3;i++){
-    const fogY=h*0.5+i*h*0.1;
-    const fogX=Math.sin(t*0.0003+i*2)*30;
-    c.save();
-    c.globalAlpha=0.08-i*0.02;
-    c.fillStyle="rgba(140,150,175,1)";
+// === LAKE ===
+let bushData = null;
+let forestData = null;
+
+function buildBushes(w,h){
+  const bushes = [];
+  // Bushes at the LEFT end of lake (on the shore, not the water)
+  for(let i=0;i<8;i++){
+    bushes.push({
+      x: w*0.01 + Math.random()*w*0.06,
+      y: h*0.75 + Math.random()*h*0.12,
+      size: 8 + Math.random()*12,
+      layers: 2 + Math.floor(Math.random()*2)
+    });
+  }
+  // Bushes at the RIGHT end of lake (on the shore near cabin)
+  for(let i=0;i<8;i++){
+    bushes.push({
+      x: w*0.88 + Math.random()*w*0.10,
+      y: h*0.74 + Math.random()*h*0.10,
+      size: 7 + Math.random()*10,
+      layers: 2 + Math.floor(Math.random()*2)
+    });
+  }
+  // Bottom LEFT corner bushes
+  for(let i=0;i<10;i++){
+    bushes.push({
+      x: w*0.0 + Math.random()*w*0.12,
+      y: h*0.88 + Math.random()*h*0.12,
+      size: 10 + Math.random()*14,
+      layers: 2 + Math.floor(Math.random()*2)
+    });
+  }
+  // Bottom RIGHT corner bushes
+  for(let i=0;i<10;i++){
+    bushes.push({
+      x: w*0.88 + Math.random()*w*0.12,
+      y: h*0.88 + Math.random()*h*0.12,
+      size: 10 + Math.random()*14,
+      layers: 2 + Math.floor(Math.random()*2)
+    });
+  }
+  return bushes;
+}
+
+// Dense forest trees like forest scene - FULL WIDTH
+function buildForest(w,h){
+  const trees = [];
+  // Dense tree line across the ENTIRE width
+  for(let i=0;i<50;i++){
+    trees.push({
+      x: Math.random()*w,
+      baseY: h*0.50 + Math.random()*h*0.18,
+      height: 35 + Math.random()*55,
+      width: 18 + Math.random()*22,
+      layers: 3 + Math.floor(Math.random()*2),
+      darkness: 0.85 + Math.random()*0.15
+    });
+  }
+  // Extra trees to fill gaps
+  for(let i=0;i<30;i++){
+    trees.push({
+      x: Math.random()*w,
+      baseY: h*0.52 + Math.random()*h*0.15,
+      height: 25 + Math.random()*45,
+      width: 14 + Math.random()*18,
+      layers: 2 + Math.floor(Math.random()*2),
+      darkness: 0.80 + Math.random()*0.2
+    });
+  }
+  // Sort by Y so farther trees draw first
+  trees.sort((a,b)=>a.baseY - b.baseY);
+  return trees;
+}
+
+function drawForest(w,h){
+  if(!forestData) forestData = buildForest(w,h);
+  
+  forestData.forEach(tree=>{
+    const tx = tree.x;
+    const ty = tree.baseY;
+    const th = tree.height;
+    const tw = tree.width;
+    
+    // Tree trunk (subtle, mostly hidden)
+    c.fillStyle=`rgba(12,10,8,${tree.darkness})`;
+    c.fillRect(tx-2, ty-th*0.3, 4, th*0.3);
+    
+    // Layered pine tree shape
+    for(let l=0;l<tree.layers;l++){
+      const layerY = ty - th*0.2 - l*(th*0.25);
+      const layerW = tw * (1 - l*0.2);
+      const layerH = th*0.35;
+      
+      // Dark pine green, very dark
+      const greenVal = 18 + l*3;
+      c.fillStyle=`rgba(${8+l*2},${greenVal},${10+l*2},${tree.darkness})`;
+      c.beginPath();
+      c.moveTo(tx, layerY - layerH);
+      c.lineTo(tx - layerW/2, layerY);
+      c.lineTo(tx + layerW/2, layerY);
+      c.closePath();
+      c.fill();
+    }
+    
+    // Top point
+    c.fillStyle=`rgba(6,15,8,${tree.darkness})`;
     c.beginPath();
-    c.ellipse(w*0.3+fogX,fogY,w*0.4,15+i*5,0,0,Math.PI*2);
+    c.moveTo(tx, ty - th);
+    c.lineTo(tx - tw*0.15, ty - th*0.75);
+    c.lineTo(tx + tw*0.15, ty - th*0.75);
+    c.closePath();
     c.fill();
+  });
+}
+
+// Grass removed
+let grassData = null;
+function buildGrass(w,h){
+  return []; // No grass
+}
+
+function drawGrass(w,h,t){
+  // No grass to draw
+}
+
+// Rocks in the forest/dirt area
+let rocksData = null;
+let shadowsData = null;
+
+function buildShadows(w,h){
+  const shadows = [];
+  const dirtY = h*0.48;
+  const dirtH = h*0.22;
+  
+  // Shadow patches
+  for(let i=0;i<25;i++){
+    shadows.push({
+      x: Math.random()*w,
+      y: dirtY + Math.random()*dirtH,
+      w: 30 + Math.random()*60,
+      h: 10 + Math.random()*20,
+      alpha: 0.3 + Math.random()*0.3,
+      rotation: Math.random()*0.5
+    });
+  }
+  
+  // Small texture spots
+  for(let i=0;i<30;i++){
+    shadows.push({
+      x: Math.random()*w,
+      y: dirtY + Math.random()*dirtH,
+      w: 3 + Math.random()*8,
+      h: (3 + Math.random()*8)*0.6,
+      alpha: 0.5,
+      rotation: Math.random()*Math.PI,
+      isTexture: true,
+      color: {
+        r: 20 + Math.floor(Math.random()*15),
+        g: 16 + Math.floor(Math.random()*12),
+        b: 12 + Math.floor(Math.random()*10)
+      }
+    });
+  }
+  
+  return shadows;
+}
+
+function drawShadows(w,h){
+  shadowsData.forEach(s=>{
+    if(s.isTexture){
+      c.fillStyle=`rgba(${s.color.r},${s.color.g},${s.color.b},${s.alpha})`;
+    } else {
+      c.fillStyle=`rgba(8,6,5,${s.alpha})`;
+    }
     c.beginPath();
-    c.ellipse(w*0.7-fogX*0.7,fogY+10,w*0.35,12+i*4,0,0,Math.PI*2);
+    c.ellipse(s.x,s.y,s.w,s.h,s.rotation,0,Math.PI*2);
+    c.fill();
+  });
+}
+
+function buildRocks(w,h){
+  const rocks = [];
+  // Scattered rocks in the dirt/forest area
+  for(let i=0;i<45;i++){
+    const size = 8 + Math.random()*20;
+    rocks.push({
+      x: Math.random()*w,
+      y: h*0.50 + Math.random()*h*0.18,
+      w: size,
+      h: size * (0.4 + Math.random()*0.25),
+      points: 5 + Math.floor(Math.random()*4), // for irregular shape
+      color: {
+        r: 18 + Math.floor(Math.random()*12),
+        g: 16 + Math.floor(Math.random()*10),
+        b: 14 + Math.floor(Math.random()*8)
+      },
+      angleOffsets: Array.from({length: 9}, () => (Math.random()-0.5)*0.4)
+    });
+  }
+  // Some larger boulders
+  for(let i=0;i<15;i++){
+    const size = 18 + Math.random()*30;
+    rocks.push({
+      x: Math.random()*w,
+      y: h*0.52 + Math.random()*h*0.15,
+      w: size,
+      h: size * (0.4 + Math.random()*0.2),
+      points: 6 + Math.floor(Math.random()*3),
+      color: {
+        r: 22 + Math.floor(Math.random()*10),
+        g: 18 + Math.floor(Math.random()*8),
+        b: 15 + Math.floor(Math.random()*6)
+      },
+      angleOffsets: Array.from({length: 9}, () => (Math.random()-0.5)*0.5)
+    });
+  }
+  // Sort by Y so farther rocks draw first
+  rocks.sort((a,b)=>a.y - b.y);
+  return rocks;
+}
+
+function drawRocks(w,h){
+  rocksData.forEach(rock=>{
+    // Draw irregular polygon rock shape
+    c.fillStyle=`rgba(${rock.color.r},${rock.color.g},${rock.color.b},0.95)`;
+    c.beginPath();
+    for(let i=0;i<rock.points;i++){
+      const angle = (i/rock.points)*Math.PI*2 + rock.angleOffsets[i];
+      const radiusX = rock.w/2 * (0.7 + rock.angleOffsets[i]*0.5);
+      const radiusY = rock.h/2 * (0.7 + rock.angleOffsets[(i+1)%rock.points]*0.5);
+      const px = rock.x + Math.cos(angle)*radiusX;
+      const py = rock.y + Math.sin(angle)*radiusY;
+      if(i===0) c.moveTo(px, py);
+      else c.lineTo(px, py);
+    }
+    c.closePath();
+    c.fill();
+    
+    // Darker bottom/shadow
+    c.fillStyle=`rgba(${rock.color.r-8},${rock.color.g-6},${rock.color.b-5},0.6)`;
+    c.beginPath();
+    c.ellipse(rock.x, rock.y + rock.h*0.25, rock.w/2.5, rock.h/4, 0, 0, Math.PI);
+    c.fill();
+    
+    // Subtle top highlight
+    c.fillStyle=`rgba(${rock.color.r+12},${rock.color.g+10},${rock.color.b+8},0.2)`;
+    c.beginPath();
+    c.ellipse(rock.x - rock.w*0.1, rock.y - rock.h*0.1, rock.w/4, rock.h/5, -0.3, 0, Math.PI*2);
+    c.fill();
+  });
+}
+
+function drawLake(w,h,t){
+  const lakeY = h*0.73;
+  const groundY = h*0.68;
+  
+  // Dark charcoal ground/shore around the lake
+  c.fillStyle="rgba(18,18,18,1)";
+  c.fillRect(0,groundY,w,h-groundY);
+  
+  // Lake base - darker color, extends to bottom
+  const lakeGrad = c.createLinearGradient(0,lakeY,0,h);
+  lakeGrad.addColorStop(0,"rgba(4,12,18,0.97)");
+  lakeGrad.addColorStop(0.3,"rgba(5,14,20,0.98)");
+  lakeGrad.addColorStop(0.7,"rgba(3,10,16,1)");
+  lakeGrad.addColorStop(1,"rgba(2,8,12,1)");
+  c.fillStyle=lakeGrad;
+  
+  // Draw irregular lake shape with rounder ends - extends to bottom
+  c.beginPath();
+  const lm = w*0.10; // left margin - more inset for rounder end
+  const rm = w*0.90; // right margin - more inset for rounder end
+  
+  // Start left side - rounder curve
+  c.moveTo(lm, lakeY+15);
+  // Left end - round curve going down to bottom
+  c.quadraticCurveTo(
+    lm-20, h*0.85,
+    lm-10, h*1.0
+  );
+  // Bottom edge - straight across (off screen)
+  c.lineTo(rm+10, h*1.0);
+  // Right end - round curve going up
+  c.quadraticCurveTo(
+    rm+20, h*0.85,
+    rm, lakeY+15
+  );
+  // Top edge - irregular curve
+  c.bezierCurveTo(
+    w*0.72, lakeY+5,
+    w*0.55, lakeY-3,
+    w*0.40, lakeY+8
+  );
+  c.bezierCurveTo(
+    w*0.28, lakeY+12,
+    w*0.18, lakeY+3,
+    lm, lakeY+15
+  );
+  c.fill();
+  
+  // Gentle ripples across the lake
+  c.save();
+  for(let i=0;i<8;i++){
+    const rippleY = lakeY + 15 + i*12;
+    const ripplePhase = t*0.001 + i*0.5;
+    const rippleAmp = 3 + Math.sin(ripplePhase*0.7)*2;
+    
+    c.strokeStyle=`rgba(60,80,100,${0.08-i*0.008})`;
+    c.lineWidth = 1;
+    c.beginPath();
+    
+    // Draw wavy ripple line
+    for(let x=w*0.1; x<w*0.85; x+=5){
+      const waveY = rippleY + Math.sin(x*0.02 + ripplePhase)*rippleAmp;
+      if(x===w*0.1) c.moveTo(x, waveY);
+      else c.lineTo(x, waveY);
+    }
+    c.stroke();
+  }
+  c.restore();
+  
+  // Moon reflection - left side of the lake
+  const moonRefX = w*0.25; // left side of lake
+  const moonRefY = lakeY + 45; // into the lake
+  
+  // Main moon glow on water - smaller to match smaller moon
+  c.save();
+  const moonGlow = c.createRadialGradient(moonRefX,moonRefY,0,moonRefX,moonRefY,45);
+  moonGlow.addColorStop(0,"rgba(200,210,230,0.35)");
+  moonGlow.addColorStop(0.4,"rgba(160,175,200,0.15)");
+  moonGlow.addColorStop(1,"rgba(120,140,170,0)");
+  c.fillStyle=moonGlow;
+  c.beginPath();
+  c.ellipse(moonRefX,moonRefY,38,16,0,0,Math.PI*2);
+  c.fill();
+  
+  // Bright center reflection
+  c.fillStyle="rgba(220,230,245,0.3)";
+  c.beginPath();
+  c.ellipse(moonRefX,moonRefY,16,7,0,0,Math.PI*2);
+  c.fill();
+  
+  // Shimmering reflection lines (moving)
+  for(let i=0;i<6;i++){
+    const shimmerY = moonRefY - 12 + i*8;
+    const shimmerPhase = t*0.002 + i*0.8;
+    const shimmerX = moonRefX + Math.sin(shimmerPhase)*5;
+    const shimmerW = 15 - Math.abs(i-2.5)*3;
+    const shimmerAlpha = 0.35 - Math.abs(i-2.5)*0.06;
+    
+    c.fillStyle=`rgba(210,225,245,${shimmerAlpha})`;
+    c.beginPath();
+    c.ellipse(shimmerX, shimmerY, shimmerW, 2, 0, 0, Math.PI*2);
+    c.fill();
+  }
+  c.restore();
+  
+  // Draw bushes around the lake
+  if(!bushData) bushData = buildBushes(w,h);
+  
+  bushData.forEach(bush=>{
+    // Draw layered bush circles for organic look - very dark, almost black green
+    for(let l=0;l<bush.layers;l++){
+      const offsetX = (l-bush.layers/2)*bush.size*0.4;
+      const offsetY = l*2;
+      const s = bush.size - l*2;
+      
+      // Almost black green bush color
+      c.fillStyle=`rgba(3,8,5,${0.98-l*0.05})`;
+      c.beginPath();
+      c.arc(bush.x+offsetX, bush.y+offsetY, s, 0, Math.PI*2);
+      c.fill();
+      
+      // Very subtle lighter highlight on top
+      c.fillStyle=`rgba(8,15,10,${0.2-l*0.05})`;
+      c.beginPath();
+      c.arc(bush.x+offsetX, bush.y+offsetY-s*0.3, s*0.5, 0, Math.PI*2);
+      c.fill();
+    }
+  });
+}
+
+// === MIST/CLOUDS ===
+function drawMist(w,h,t){
+  const mistY = h*0.10; // Higher, near top of mountains
+  
+  // Thin wispy mist layers - more transparent, gently drifting
+  for(let i=0;i<4;i++){
+    const driftSpeed = 0.0001 + i*0.00005;
+    const fogX = Math.sin(t*driftSpeed+i*2)*60 + Math.cos(t*driftSpeed*0.7+i)*30;
+    const fogY = mistY + i*12;
+    c.save();
+    c.globalAlpha=0.06-i*0.01; // More transparent
+    
+    // Smaller, wispier clouds
+    c.fillStyle="rgba(180,190,205,0.5)";
+    c.beginPath();
+    c.ellipse(w*0.3+fogX, fogY, w*0.2, 8+i*3, 0, 0, Math.PI*2);
+    c.fill();
+    
+    c.beginPath();
+    c.ellipse(w*0.6-fogX*0.6, fogY+5, w*0.15, 6+i*2, 0, 0, Math.PI*2);
+    c.fill();
+    
+    c.beginPath();
+    c.ellipse(w*0.8+fogX*0.4, fogY+3, w*0.12, 5+i*2, 0, 0, Math.PI*2);
     c.fill();
     c.restore();
   }
 }
 
+// === CAMPFIRE ===
+let campfireFlicker = 0;
+function drawCampfire(w,h,t){
+  const cx = w*0.78;
+  const cy = h*0.72; // On the ground, not the lake
+  
+  campfireFlicker += 0.15;
+  const flicker = Math.sin(campfireFlicker)*0.3 + Math.sin(campfireFlicker*1.7)*0.2;
+  
+  // Fire glow on ground
+  const groundGlow = c.createRadialGradient(cx,cy,0,cx,cy,60);
+  groundGlow.addColorStop(0,"rgba(255,150,50,0.12)");
+  groundGlow.addColorStop(0.5,"rgba(255,100,30,0.04)");
+  groundGlow.addColorStop(1,"rgba(255,80,20,0)");
+  c.fillStyle=groundGlow;
+  c.beginPath();
+  c.arc(cx,cy,60,0,Math.PI*2);
+  c.fill();
+  
+  // Bigger cabin silhouette (to the right of fire) - very dark, almost black
+  const cabinX = cx + 35;
+  const cabinY = cy + 5;
+  const cabinW = 55;
+  const cabinH = 40;
+  
+  // Cabin body - almost black
+  c.fillStyle="rgba(8,8,8,0.98)";
+  c.fillRect(cabinX, cabinY-cabinH, cabinW, cabinH);
+  
+  // Cabin roof - darkest
+  c.fillStyle="rgba(5,5,5,0.98)";
+  c.beginPath();
+  c.moveTo(cabinX-8, cabinY-cabinH);
+  c.lineTo(cabinX+cabinW/2, cabinY-cabinH-25);
+  c.lineTo(cabinX+cabinW+8, cabinY-cabinH);
+  c.closePath();
+  c.fill();
+  
+  // Chimney
+  c.fillStyle="rgba(6,6,6,0.98)";
+  c.fillRect(cabinX+cabinW-15, cabinY-cabinH-20, 8, 15);
+  
+  // Door - slightly lighter to show shape
+  c.fillStyle="rgba(12,10,10,0.95)";
+  c.fillRect(cabinX+10, cabinY-22, 12, 22);
+  
+  // Windows with warm glow
+  c.fillStyle="rgba(255,180,80,0.5)";
+  c.fillRect(cabinX+28, cabinY-cabinH+10, 12, 10);
+  c.fillStyle="rgba(255,200,100,0.3)";
+  c.fillRect(cabinX+28, cabinY-cabinH+10, 12, 10);
+  // Window frame
+  c.strokeStyle="rgba(3,3,3,0.9)";
+  c.lineWidth=1;
+  c.strokeRect(cabinX+28, cabinY-cabinH+10, 12, 10);
+  c.beginPath();
+  c.moveTo(cabinX+34, cabinY-cabinH+10);
+  c.lineTo(cabinX+34, cabinY-cabinH+20);
+  c.stroke();
+  
+  // Second smaller window
+  c.fillStyle="rgba(255,160,60,0.4)";
+  c.fillRect(cabinX+cabinW-18, cabinY-cabinH+12, 8, 8);
+  
+  // Fire ring stones
+  c.fillStyle="rgba(30,28,26,0.9)";
+  for(let i=0;i<6;i++){
+    const angle = (i/6)*Math.PI*2;
+    const sx = cx + Math.cos(angle)*12;
+    const sy = cy + 3 + Math.sin(angle)*5;
+    c.beginPath();
+    c.ellipse(sx,sy,4,3,0,0,Math.PI*2);
+    c.fill();
+  }
+  
+  // Logs
+  c.fillStyle="rgba(35,28,22,0.9)";
+  c.save();
+  c.translate(cx,cy+2);
+  c.rotate(-0.3);
+  c.fillRect(-10,-2,20,4);
+  c.rotate(0.6);
+  c.fillRect(-10,-2,20,4);
+  c.restore();
+  
+  // Fire flames
+  const flames = [
+    {ox:0, h:16+flicker*8, w:5, color:"rgba(255,200,80,"},
+    {ox:-3, h:10+flicker*5, w:3, color:"rgba(255,150,50,"},
+    {ox:3, h:12+flicker*6, w:4, color:"rgba(255,120,30,"},
+    {ox:-1, h:18+flicker*10, w:4, color:"rgba(255,230,120,"},
+    {ox:2, h:14+flicker*7, w:3, color:"rgba(255,180,60,"},
+  ];
+  
+  flames.forEach((f,i)=>{
+    const wob = Math.sin(campfireFlicker+i)*2;
+    c.fillStyle=f.color+"0.8)";
+    c.beginPath();
+    c.moveTo(cx+f.ox-f.w+wob, cy);
+    c.quadraticCurveTo(cx+f.ox+wob*0.5, cy-f.h*0.5, cx+f.ox+wob, cy-f.h);
+    c.quadraticCurveTo(cx+f.ox+wob*0.5, cy-f.h*0.5, cx+f.ox+f.w+wob, cy);
+    c.closePath();
+    c.fill();
+  });
+  
+  // Sparks
+  if(Math.random()>0.92){
+    for(let s=0;s<2;s++){
+      const spark = {
+        x: cx + (Math.random()-0.5)*10,
+        y: cy - 15 - Math.random()*10,
+        vx: (Math.random()-0.5)*0.5,
+        vy: -0.5-Math.random()*0.5,
+      };
+      gs.sparks.push(spark);
+    }
+  }
+  
+  // Draw existing sparks
+  for(let i=gs.sparks.length-1;i>=0;i--){
+    const s=gs.sparks[i];
+    s.x+=s.vx;
+    s.y+=s.vy;
+    s.vy+=0.01; // slight gravity
+    const age = (cy-15-s.y)/40;
+    if(age>1 || s.y>cy){gs.sparks.splice(i,1);continue;}
+    c.fillStyle=`rgba(255,200,100,${0.8-age*0.8})`;
+    c.beginPath();
+    c.arc(s.x,s.y,1.5,0,Math.PI*2);
+    c.fill();
+  }
+}
+
 // === GAME STATE ===
 const gs={
-  drops:[],catchPs:[],ripples:[],
-  score:0,phase:"menu",timeLeft:DURATION,
+  drops:[],catchPs:[],ripples:[],sparks:[],
+  score:0,phase:"menu",
   lastRain:0,nextGlow:0,
   cloudOff:0,menuPulse:0,
   endT:0,endQuote:"",
@@ -238,15 +898,19 @@ function scheduleGlow(){
 
 function mkDrop(w,h,forceGlow){
   const gl=forceGlow||false;
+  // Glowing drops stay centered
+  const xPos = gl 
+    ? w*GLOW_MARGIN + Math.random()*w*(1-2*GLOW_MARGIN)
+    : Math.random()*w;
   return{
-    x:Math.random()*w,y:-10-Math.random()*50,
-    speed:gl?1.0+Math.random()*0.5:3+Math.random()*3,
-    length:gl?16+Math.random()*10:3+Math.random()*9,
-    opacity:gl?1:0.08+Math.random()*0.18,
+    x:xPos,y:-10-Math.random()*50,
+    speed:gl?0.6+Math.random()*0.4:5+Math.random()*4,
+    length:gl?14+Math.random()*8:2+Math.random()*5,
+    opacity:gl?1:0.15+Math.random()*0.20, // more visible rain
     isGlowing:gl,pulsePhase:Math.random()*Math.PI*2,
-    width:gl?2.5:0.5+Math.random()*0.7,
+    width:gl?2.5:0.4+Math.random()*0.6, // slightly thicker
     caught:false,fadeOut:1,
-    drift:(Math.random()-0.5)*0.5, // more wind on mountain
+    drift:(Math.random()-0.5)*0.8,
   };
 }
 
@@ -275,15 +939,15 @@ function tap(e){
   e.preventDefault();initAudio();
 
   if(gs.phase==="menu"){
-    gs.phase="playing";gs.score=0;gs.timeLeft=DURATION;
-    gs.drops=[];gs.catchPs=[];gs.ripples=[];
+    gs.phase="playing";gs.score=0;
+    gs.drops=[];gs.catchPs=[];gs.ripples=[];gs.sparks=[];
     gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;
-    mountains=null;scheduleGlow();
-    resetRain();lastTick=Date.now();return;
+    mountains=null;forestData=null;bushData=null;grassData=null;rocksData=null;shadowsData=null;scheduleGlow();
+    resetRain();return;
   }
 
   if(gs.phase==="quote"){
-    gs.phase="menu";gs.score=0;mountains=null;
+    gs.phase="menu";gs.score=0;mountains=null;forestData=null;bushData=null;grassData=null;rocksData=null;shadowsData=null;
     gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;resetRain();return;
   }
 
@@ -318,17 +982,20 @@ function drawDrop(d){
   c.save();
   if(d.isGlowing&&!d.caught){
     d.pulsePhase+=0.04;const p=0.6+Math.sin(d.pulsePhase)*0.4;
-    // Silver/ice glow
-    const og=c.createRadialGradient(d.x,d.y,0,d.x,d.y,32);
-    og.addColorStop(0,`rgba(180,200,230,${0.22*p})`);og.addColorStop(0.4,`rgba(160,180,215,${0.08*p})`);og.addColorStop(1,"rgba(160,180,215,0)");
-    c.fillStyle=og;c.beginPath();c.arc(d.x,d.y,32,0,Math.PI*2);c.fill();
-    const ig=c.createRadialGradient(d.x,d.y,0,d.x,d.y,12);
-    ig.addColorStop(0,`rgba(210,225,245,${0.45*p})`);ig.addColorStop(1,`rgba(180,200,230,${0.12*p})`);
-    c.fillStyle=ig;c.beginPath();c.arc(d.x,d.y,12,0,Math.PI*2);c.fill();
-    c.strokeStyle=`rgba(210,225,245,${0.8*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";
-    c.beginPath();c.moveTo(d.x,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();
-    c.fillStyle=`rgba(255,255,255,${0.85*p*d.fadeOut})`;
-    c.beginPath();c.arc(d.x,d.y,2.5,0,Math.PI*2);c.fill();
+    // White/silver glow - soft
+    const og=c.createRadialGradient(d.x,d.y,0,d.x,d.y,20);
+    og.addColorStop(0,`rgba(220,230,245,${0.18*p})`);og.addColorStop(0.5,`rgba(200,215,235,${0.08*p})`);og.addColorStop(1,"rgba(180,200,225,0)");
+    c.fillStyle=og;c.beginPath();c.ellipse(d.x,d.y,16,22,0,0,Math.PI*2);c.fill();
+    // Inner glow - oval
+    const ig=c.createRadialGradient(d.x,d.y,0,d.x,d.y,8);
+    ig.addColorStop(0,`rgba(240,245,255,${0.4*p})`);ig.addColorStop(1,`rgba(220,230,245,${0.15*p})`);
+    c.fillStyle=ig;c.beginPath();c.ellipse(d.x,d.y,5,8,0,0,Math.PI*2);c.fill();
+    // Oval drop shape
+    c.fillStyle=`rgba(245,250,255,${0.75*p*d.fadeOut})`;
+    c.beginPath();c.ellipse(d.x,d.y,3,5,0,0,Math.PI*2);c.fill();
+    // Tiny bright center
+    c.fillStyle=`rgba(255,255,255,${0.7*p*d.fadeOut})`;
+    c.beginPath();c.ellipse(d.x,d.y,1.5,2.5,0,0,Math.PI*2);c.fill();
   } else {
     c.strokeStyle=`rgba(140,150,170,${d.opacity*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";
     c.beginPath();c.moveTo(d.x+d.drift*6,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();
@@ -337,25 +1004,10 @@ function drawDrop(d){
 }
 
 // === MAIN LOOP ===
-let lastTick=Date.now();
-
 function loop(){
   const now=Date.now(),{w:cw,h:ch}=getSize();
 
-  if(gs.phase==="playing"){
-    const dt=now-lastTick;
-    if(dt>=1000){
-      gs.timeLeft=Math.max(0,gs.timeLeft-Math.floor(dt/1000));
-      lastTick=now-(dt%1000);
-      if(gs.timeLeft<=0){
-        gs.phase="ending";gs.endT=0;
-        gs.endQuote=QUOTES[Math.floor(Math.random()*QUOTES.length)];
-        playEnd();
-      }
-    }
-  }
-
-  // === BG — dark moody sky ===
+  // === BG — dark moody night sky ===
   const bg=c.createLinearGradient(0,0,0,ch);
   bg.addColorStop(0,"#0a0c14");bg.addColorStop(0.3,"#111318");bg.addColorStop(0.6,"#181c28");bg.addColorStop(1,"#1c1f2e");
   c.fillStyle=bg;c.fillRect(0,0,cw,ch);
@@ -363,17 +1015,62 @@ function loop(){
   const isActive=gs.phase==="menu"||gs.phase==="playing"||gs.phase==="ending"||gs.phase==="quote";
 
   if(isActive){
+    // Moon (upper left)
+    drawMoon(cw,ch,now);
+    
+    // 5 small static stars
+    c.fillStyle="rgba(220,225,235,0.7)";
+    c.beginPath();c.arc(cw*0.08, ch*0.05, 1.5, 0, Math.PI*2);c.fill();
+    c.beginPath();c.arc(cw*0.45, ch*0.03, 1, 0, Math.PI*2);c.fill();
+    c.beginPath();c.arc(cw*0.72, ch*0.07, 1.5, 0, Math.PI*2);c.fill();
+    c.beginPath();c.arc(cw*0.88, ch*0.04, 1, 0, Math.PI*2);c.fill();
+    c.beginPath();c.arc(cw*0.35, ch*0.09, 1.2, 0, Math.PI*2);c.fill();
+    
     // Heavy cloud cover
     gs.cloudOff+=0.06;
-    c.save();c.globalAlpha=0.2;c.fillStyle="rgba(30,32,45,1)";
+    c.save();c.globalAlpha=0.15;c.fillStyle="rgba(30,32,45,1)";
     for(let i=0;i<4;i++){
       const cx2=((gs.cloudOff*(0.15+i*0.12)+i*170)%(cw+350))-175;
       c.beginPath();c.ellipse(cx2,12+i*11,120+i*25,16+i*6,0,0,Math.PI*2);c.fill();
     }
     c.restore();
 
-    // Mountains
+    // Mountains (above mist)
     drawMountains(cw,ch,now);
+    
+    // Dark brown dirt/rocks area behind trees
+    const dirtY = ch*0.48;
+    const dirtH = ch*0.22;
+    const dirtGrad = c.createLinearGradient(0,dirtY,0,dirtY+dirtH);
+    dirtGrad.addColorStop(0,"rgba(25,20,15,1)");
+    dirtGrad.addColorStop(0.3,"rgba(30,24,18,1)");
+    dirtGrad.addColorStop(0.7,"rgba(22,18,14,1)");
+    dirtGrad.addColorStop(1,"rgba(18,15,12,1)");
+    c.fillStyle=dirtGrad;
+    c.fillRect(0,dirtY,cw,dirtH);
+    
+    // Add darker shadow patches for depth (pre-generated)
+    if(!shadowsData) shadowsData = buildShadows(cw,ch);
+    drawShadows(cw,ch);
+    
+    // Larger rocks scattered in the dirt/forest area
+    if(!rocksData) rocksData = buildRocks(cw,ch);
+    drawRocks(cw,ch);
+    
+    // Dense forest on right side (behind cabin area)
+    drawForest(cw,ch);
+    
+    // Mist layer (covering lower mountains)
+    drawMist(cw,ch,now);
+    
+    // Lake
+    drawLake(cw,ch,now);
+    
+    // Tall grass at bottom of lake
+    drawGrass(cw,ch,now);
+    
+    // Campfire
+    drawCampfire(cw,ch,now);
 
     // === RAIN ===
     const canSpawn=gs.phase==="playing"||gs.phase==="ending";
@@ -393,7 +1090,17 @@ function loop(){
       scheduleGlow();
     }
 
-    if(gs.drops.length>500) gs.drops.splice(0,gs.drops.length-500);
+    // Remove oldest non-glowing drops if too many, but keep glowing drops
+    if(gs.drops.length>800) {
+      let removed = 0;
+      for(let i=0;i<gs.drops.length && removed < 200;i++){
+        if(!gs.drops[i].isGlowing){
+          gs.drops.splice(i,1);
+          removed++;
+          i--;
+        }
+      }
+    }
 
     for(let i=gs.drops.length-1;i>=0;i--){
       const d=gs.drops[i];d.y+=d.speed;d.x+=d.drift;
@@ -423,7 +1130,7 @@ function loop(){
     }
   }
 
-  // === PLAYING UI ===
+  // === PLAYING UI (no timer - just score bar) ===
   if(gs.phase==="playing"){
     const barW=5,barH=ch*0.6,barX=12,barY=(ch-barH)/2;
     const prog=Math.min(gs.score/DROPS_TO_WIN,1);
@@ -439,9 +1146,6 @@ function loop(){
     }
     c.fillStyle="rgba(255,255,255,0.65)";c.font="600 13px 'Helvetica Neue',sans-serif";
     c.textAlign="center";c.fillText(`${gs.score}`,barX+barW/2,barY+barH+18);
-    const m=Math.floor(gs.timeLeft/60),s=gs.timeLeft%60;
-    c.fillStyle="rgba(255,255,255,0.5)";c.font="14px 'Helvetica Neue',sans-serif";
-    c.textAlign="right";c.fillText(`${m}:${s.toString().padStart(2,"0")}`,cw-15,22);
   }
 
   // === MENU ===
@@ -455,7 +1159,7 @@ function loop(){
     c.fillStyle="rgba(180,195,225,0.4)";c.font="12px 'Helvetica Neue',sans-serif";
     c.fillText("catch the glowing drops",cw/2,ch/2+32);
     c.fillStyle="rgba(180,195,225,0.3)";c.font="11px 'Helvetica Neue',sans-serif";
-    c.fillText("mountain",cw/2,ch/2+52);
+    c.fillText("mountain lake",cw/2,ch/2+52);
   }
 
   // === ENDING — GOLDEN SUNRISE TRANSITION ===
