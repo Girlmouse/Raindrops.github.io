@@ -134,83 +134,42 @@ function getSize(){
 function resize(){const{w,h}=getSize();cv.width=w*2;cv.height=h*2;cv.style.width=w+"px";cv.style.height=h+"px";c.setTransform(2,0,0,2,0,0);}
 resize();window.addEventListener("resize",resize);
 
-// === MOUNTAINS (rounder, rough edges, dark peaks with trees) ===
+// === MOUNTAINS (original simple style) ===
 function buildMountains(w,h){
   const layers=[];
-  
-  // Far range — darker with snow-capped peaks
+
+  // Far range
   const far=[];
   let fx=0;
   while(fx<w+60){
-    const pw=80+Math.random()*120;
-    const ph=h*0.12+Math.random()*h*0.12;
-    // Generate rough edge points for rounder shape
-    const roughness = [];
-    for(let r=0;r<8;r++) roughness.push((Math.random()-0.5)*10);
-    // Pre-generate tree positions
-    const treeData = [];
-    if(Math.random()>0.7){
-      const treeCount = 3 + Math.floor(Math.random()*4);
-      for(let t=0;t<treeCount;t++){
-        treeData.push({
-          offsetX: -0.15 + Math.random()*0.3,
-          offsetY: Math.random()*0.2,
-          size: 8 + Math.random()*12
-        });
-      }
-    }
-    far.push({x:fx,w:pw,h:ph,rough:roughness,treeData:treeData,hasSnow:true});
-    fx+=pw*0.55;
+    const pw=60+Math.random()*100;
+    const ph=h*0.15+Math.random()*h*0.15;
+    far.push({x:fx,w:pw,h:ph});
+    fx+=pw*0.6;
   }
-  layers.push({peaks:far,baseColor:{r:30,g:32,b:35},opacity:0.75,y:h*0.35});
+  layers.push({peaks:far,color:"rgba(45,50,70,0.6)",y:h*0.45});
 
-  // Mid range — medium charcoal with slight green
+  // Mid range
   const mid=[];
   let mx=0;
   while(mx<w+80){
-    const pw=100+Math.random()*140;
-    const ph=h*0.18+Math.random()*h*0.15;
-    const roughness = [];
-    for(let r=0;r<10;r++) roughness.push((Math.random()-0.5)*15);
-    const treeData = [];
-    if(Math.random()>0.5){
-      const treeCount = 3 + Math.floor(Math.random()*4);
-      for(let t=0;t<treeCount;t++){
-        treeData.push({
-          offsetX: -0.15 + Math.random()*0.3,
-          offsetY: Math.random()*0.2,
-          size: 8 + Math.random()*12
-        });
-      }
-    }
-    mid.push({x:mx,w:pw,h:ph,rough:roughness,treeData:treeData,hasSnow:false});
-    mx+=pw*0.5;
+    const pw=80+Math.random()*120;
+    const ph=h*0.2+Math.random()*h*0.2;
+    mid.push({x:mx,w:pw,h:ph});
+    mx+=pw*0.55;
   }
-  layers.push({peaks:mid,baseColor:{r:22,g:24,b:26},opacity:0.85,y:h*0.42});
+  layers.push({peaks:mid,color:"rgba(30,35,50,0.8)",y:h*0.52});
 
-  // Near range — very dark, like shadows
+  // Near range — tallest, darkest
   const near=[];
   let nx=-30;
   while(nx<w+100){
-    const pw=120+Math.random()*160;
-    const ph=h*0.25+Math.random()*h*0.2;
-    const roughness = [];
-    for(let r=0;r<12;r++) roughness.push((Math.random()-0.5)*20);
-    const treeData = [];
-    if(Math.random()>0.3){
-      const treeCount = 3 + Math.floor(Math.random()*4);
-      for(let t=0;t<treeCount;t++){
-        treeData.push({
-          offsetX: -0.15 + Math.random()*0.3,
-          offsetY: Math.random()*0.2,
-          size: 8 + Math.random()*12
-        });
-      }
-    }
-    near.push({x:nx,w:pw,h:ph,rough:roughness,treeData:treeData});
-    nx+=pw*0.45;
+    const pw=100+Math.random()*140;
+    const ph=h*0.3+Math.random()*h*0.25;
+    near.push({x:nx,w:pw,h:ph});
+    nx+=pw*0.5;
   }
-  layers.push({peaks:near,baseColor:{r:10,g:10,b:10},opacity:0.98,y:h*0.5});
+  layers.push({peaks:near,color:"rgba(18,20,30,0.92)",y:h*0.58});
 
   return layers;
 }
@@ -221,84 +180,28 @@ function drawMountains(w,h,t){
 
   mountains.forEach(layer=>{
     layer.peaks.forEach(pk=>{
-      const bc=layer.baseColor;
-      c.fillStyle=`rgba(${bc.r},${bc.g},${bc.b},${layer.opacity})`;
+      c.fillStyle=layer.color;
       c.beginPath();
-      
-      // Start at base left
       c.moveTo(pk.x,layer.y);
-      
-      // Draw rounder mountain with bezier curves and rough edges
-      const segments = pk.rough.length;
-      const peakX = pk.x + pk.w * 0.5;
-      const peakY = layer.y - pk.h;
-      
-      // Left slope with curves
-      for(let i=0;i<segments/2;i++){
-        const t = i/(segments/2);
-        const x = pk.x + t*(peakX-pk.x);
-        const y = layer.y - Math.sin(t*Math.PI/2)*pk.h + pk.rough[i];
-        if(i===0) c.lineTo(x,y);
-        else c.lineTo(x,y);
-      }
-      
-      // Peak area (rounded)
-      c.quadraticCurveTo(peakX, peakY-10, peakX+pk.w*0.1, peakY+pk.h*0.05);
-      
-      // Right slope with curves  
-      for(let i=segments/2;i<segments;i++){
-        const t = (i-segments/2)/(segments/2);
-        const x = peakX + pk.w*0.1 + t*(pk.x+pk.w-peakX-pk.w*0.1);
-        const y = layer.y - Math.cos(t*Math.PI/2)*pk.h*0.9 + pk.rough[i];
-        c.lineTo(x,y);
-      }
-      
+      // Left slope
+      c.lineTo(pk.x+pk.w*0.4,layer.y-pk.h*0.7);
+      // Peak
+      c.lineTo(pk.x+pk.w*0.5,layer.y-pk.h);
+      // Right slope
+      c.lineTo(pk.x+pk.w*0.65,layer.y-pk.h*0.6);
       c.lineTo(pk.x+pk.w,layer.y);
       c.closePath();
       c.fill();
 
-      // Lighter gray/green peak coloring
-      const peakGrad = c.createLinearGradient(peakX, peakY, peakX, peakY+pk.h*0.3);
-      peakGrad.addColorStop(0,"rgba(75,82,78,0.5)");
-      peakGrad.addColorStop(0.5,"rgba(60,68,62,0.3)");
-      peakGrad.addColorStop(1,"rgba(45,50,48,0)");
-      c.fillStyle=peakGrad;
-      c.beginPath();
-      c.moveTo(peakX-pk.w*0.15,layer.y-pk.h*0.6);
-      c.quadraticCurveTo(peakX, peakY-5, peakX+pk.w*0.2, layer.y-pk.h*0.55);
-      c.lineTo(peakX+pk.w*0.1, layer.y-pk.h*0.3);
-      c.lineTo(peakX-pk.w*0.1, layer.y-pk.h*0.3);
-      c.closePath();
-      c.fill();
-
-      // Snow caps on far layer peaks
-      if(pk.hasSnow){
-        c.fillStyle="rgba(200,205,215,0.6)";
+      // Snow cap on taller peaks
+      if(pk.h>h*0.25){
+        c.fillStyle="rgba(180,190,210,0.15)";
         c.beginPath();
-        c.moveTo(peakX-pk.w*0.08, layer.y-pk.h*0.85);
-        c.quadraticCurveTo(peakX, peakY-8, peakX+pk.w*0.12, layer.y-pk.h*0.82);
-        c.lineTo(peakX+pk.w*0.06, layer.y-pk.h*0.7);
-        c.lineTo(peakX-pk.w*0.04, layer.y-pk.h*0.72);
+        c.moveTo(pk.x+pk.w*0.42,layer.y-pk.h*0.8);
+        c.lineTo(pk.x+pk.w*0.5,layer.y-pk.h);
+        c.lineTo(pk.x+pk.w*0.58,layer.y-pk.h*0.82);
         c.closePath();
         c.fill();
-      }
-
-      // Tree tops on some peaks (using pre-generated positions)
-      if(pk.treeData && pk.treeData.length > 0 && pk.h > h*0.15){
-        const treeY = layer.y - pk.h*0.4;
-        c.fillStyle=`rgba(20,35,25,${layer.opacity*0.8})`;
-        pk.treeData.forEach(tree=>{
-          const tx = peakX + pk.w*tree.offsetX;
-          const ty = treeY + pk.h*tree.offsetY;
-          const th = tree.size;
-          // Simple triangle tree
-          c.beginPath();
-          c.moveTo(tx, ty);
-          c.lineTo(tx-th*0.4, ty+th);
-          c.lineTo(tx+th*0.4, ty+th);
-          c.closePath();
-          c.fill();
-        });
       }
     });
   });
@@ -306,9 +209,9 @@ function drawMountains(w,h,t){
 
 // === MOON ===
 function drawMoon(w,h,t){
-  const mx = w*0.10; // left upper corner
-  const my = h*0.06; // higher up
-  const mr = 20; // smaller
+  const mx = w*0.12; // upper left
+  const my = h*0.10;
+  const mr = 22;
   
   // Outer glow
   const glow = c.createRadialGradient(mx,my,mr*0.5,mx,my,mr*3);
@@ -422,7 +325,7 @@ function drawForest(w,h){
     const tw = tree.width;
     
     // Tree trunk (subtle, mostly hidden)
-    c.fillStyle=`rgba(12,10,8,${tree.darkness})`;
+    c.fillStyle=`rgba(8,6,5,${tree.darkness})`;
     c.fillRect(tx-2, ty-th*0.3, 4, th*0.3);
     
     // Layered pine tree shape
@@ -431,9 +334,9 @@ function drawForest(w,h){
       const layerW = tw * (1 - l*0.2);
       const layerH = th*0.35;
       
-      // Dark pine green, very dark
-      const greenVal = 18 + l*3;
-      c.fillStyle=`rgba(${8+l*2},${greenVal},${10+l*2},${tree.darkness})`;
+      // Much darker pine green
+      const greenVal = 12 + l*2;
+      c.fillStyle=`rgba(${4+l},${greenVal},${6+l},${tree.darkness})`;
       c.beginPath();
       c.moveTo(tx, layerY - layerH);
       c.lineTo(tx - layerW/2, layerY);
@@ -443,7 +346,7 @@ function drawForest(w,h){
     }
     
     // Top point
-    c.fillStyle=`rgba(6,15,8,${tree.darkness})`;
+    c.fillStyle=`rgba(3,10,5,${tree.darkness})`;
     c.beginPath();
     c.moveTo(tx, ty - th);
     c.lineTo(tx - tw*0.15, ty - th*0.75);
@@ -606,53 +509,31 @@ function drawLake(w,h,t){
   lakeGrad.addColorStop(1,"rgba(2,8,12,1)");
   c.fillStyle=lakeGrad;
   
-  // Draw irregular lake shape with rounder ends - extends to bottom
+  // Draw oval lake shape
   c.beginPath();
-  const lm = w*0.10; // left margin - more inset for rounder end
-  const rm = w*0.90; // right margin - more inset for rounder end
-  
-  // Start left side - rounder curve
-  c.moveTo(lm, lakeY+15);
-  // Left end - round curve going down to bottom
-  c.quadraticCurveTo(
-    lm-20, h*0.85,
-    lm-10, h*1.0
-  );
-  // Bottom edge - straight across (off screen)
-  c.lineTo(rm+10, h*1.0);
-  // Right end - round curve going up
-  c.quadraticCurveTo(
-    rm+20, h*0.85,
-    rm, lakeY+15
-  );
-  // Top edge - irregular curve
-  c.bezierCurveTo(
-    w*0.72, lakeY+5,
-    w*0.55, lakeY-3,
-    w*0.40, lakeY+8
-  );
-  c.bezierCurveTo(
-    w*0.28, lakeY+12,
-    w*0.18, lakeY+3,
-    lm, lakeY+15
-  );
+  const lakeCenterX = w * 0.5;
+  const lakeCenterY = h * 0.85;
+  const lakeRadiusX = w * 0.42;
+  const lakeRadiusY = h * 0.18;
+  c.ellipse(lakeCenterX, lakeCenterY, lakeRadiusX, lakeRadiusY, 0, 0, Math.PI * 2);
   c.fill();
   
   // Gentle ripples across the lake
   c.save();
-  for(let i=0;i<8;i++){
-    const rippleY = lakeY + 15 + i*12;
+  for(let i=0;i<6;i++){
+    const rippleY = lakeCenterY - lakeRadiusY*0.5 + i*12;
     const ripplePhase = t*0.001 + i*0.5;
-    const rippleAmp = 3 + Math.sin(ripplePhase*0.7)*2;
+    const rippleAmp = 2 + Math.sin(ripplePhase*0.7)*1.5;
     
-    c.strokeStyle=`rgba(60,80,100,${0.08-i*0.008})`;
+    c.strokeStyle=`rgba(60,80,100,${0.08-i*0.01})`;
     c.lineWidth = 1;
     c.beginPath();
     
-    // Draw wavy ripple line
-    for(let x=w*0.1; x<w*0.85; x+=5){
+    // Draw wavy ripple line within oval bounds
+    const rippleWidth = lakeRadiusX * (1 - Math.abs(i-2.5)/4);
+    for(let x=lakeCenterX - rippleWidth; x<lakeCenterX + rippleWidth; x+=5){
       const waveY = rippleY + Math.sin(x*0.02 + ripplePhase)*rippleAmp;
-      if(x===w*0.1) c.moveTo(x, waveY);
+      if(x===lakeCenterX - rippleWidth) c.moveTo(x, waveY);
       else c.lineTo(x, waveY);
     }
     c.stroke();
@@ -660,8 +541,8 @@ function drawLake(w,h,t){
   c.restore();
   
   // Moon reflection - left side of the lake
-  const moonRefX = w*0.25; // left side of lake
-  const moonRefY = lakeY + 45; // into the lake
+  const moonRefX = w*0.30;
+  const moonRefY = lakeCenterY - lakeRadiusY*0.3;
   
   // Main moon glow on water - smaller to match smaller moon
   c.save();
@@ -752,27 +633,27 @@ function drawMist(w,h,t){
 // === CAMPFIRE ===
 let campfireFlicker = 0;
 function drawCampfire(w,h,t){
-  const cx = w*0.78;
-  const cy = h*0.72; // On the ground, not the lake
+  const cx = w*0.50; // centered
+  const cy = h*0.58; // moved up between trees and mountains
   
   campfireFlicker += 0.15;
   const flicker = Math.sin(campfireFlicker)*0.3 + Math.sin(campfireFlicker*1.7)*0.2;
   
   // Fire glow on ground
-  const groundGlow = c.createRadialGradient(cx,cy,0,cx,cy,60);
-  groundGlow.addColorStop(0,"rgba(255,150,50,0.12)");
-  groundGlow.addColorStop(0.5,"rgba(255,100,30,0.04)");
+  const groundGlow = c.createRadialGradient(cx,cy,0,cx,cy,50);
+  groundGlow.addColorStop(0,"rgba(255,150,50,0.15)");
+  groundGlow.addColorStop(0.5,"rgba(255,100,30,0.06)");
   groundGlow.addColorStop(1,"rgba(255,80,20,0)");
   c.fillStyle=groundGlow;
   c.beginPath();
-  c.arc(cx,cy,60,0,Math.PI*2);
+  c.arc(cx,cy,50,0,Math.PI*2);
   c.fill();
   
-  // Bigger cabin silhouette (to the right of fire) - very dark, almost black
-  const cabinX = cx + 35;
+  // Cabin silhouette (to the right of fire) - very dark, almost black
+  const cabinX = cx + 30;
   const cabinY = cy + 5;
-  const cabinW = 55;
-  const cabinH = 40;
+  const cabinW = 45;
+  const cabinH = 32;
   
   // Cabin body - almost black
   c.fillStyle="rgba(8,8,8,0.98)";
@@ -781,46 +662,46 @@ function drawCampfire(w,h,t){
   // Cabin roof - darkest
   c.fillStyle="rgba(5,5,5,0.98)";
   c.beginPath();
-  c.moveTo(cabinX-8, cabinY-cabinH);
-  c.lineTo(cabinX+cabinW/2, cabinY-cabinH-25);
-  c.lineTo(cabinX+cabinW+8, cabinY-cabinH);
+  c.moveTo(cabinX-6, cabinY-cabinH);
+  c.lineTo(cabinX+cabinW/2, cabinY-cabinH-20);
+  c.lineTo(cabinX+cabinW+6, cabinY-cabinH);
   c.closePath();
   c.fill();
   
   // Chimney
   c.fillStyle="rgba(6,6,6,0.98)";
-  c.fillRect(cabinX+cabinW-15, cabinY-cabinH-20, 8, 15);
+  c.fillRect(cabinX+cabinW-12, cabinY-cabinH-15, 6, 12);
   
   // Door - slightly lighter to show shape
   c.fillStyle="rgba(12,10,10,0.95)";
-  c.fillRect(cabinX+10, cabinY-22, 12, 22);
+  c.fillRect(cabinX+8, cabinY-18, 10, 18);
   
   // Windows with warm glow
   c.fillStyle="rgba(255,180,80,0.5)";
-  c.fillRect(cabinX+28, cabinY-cabinH+10, 12, 10);
+  c.fillRect(cabinX+22, cabinY-cabinH+8, 10, 8);
   c.fillStyle="rgba(255,200,100,0.3)";
-  c.fillRect(cabinX+28, cabinY-cabinH+10, 12, 10);
+  c.fillRect(cabinX+22, cabinY-cabinH+8, 10, 8);
   // Window frame
   c.strokeStyle="rgba(3,3,3,0.9)";
   c.lineWidth=1;
-  c.strokeRect(cabinX+28, cabinY-cabinH+10, 12, 10);
+  c.strokeRect(cabinX+22, cabinY-cabinH+8, 10, 8);
   c.beginPath();
-  c.moveTo(cabinX+34, cabinY-cabinH+10);
-  c.lineTo(cabinX+34, cabinY-cabinH+20);
+  c.moveTo(cabinX+27, cabinY-cabinH+8);
+  c.lineTo(cabinX+27, cabinY-cabinH+16);
   c.stroke();
   
   // Second smaller window
   c.fillStyle="rgba(255,160,60,0.4)";
-  c.fillRect(cabinX+cabinW-18, cabinY-cabinH+12, 8, 8);
+  c.fillRect(cabinX+cabinW-14, cabinY-cabinH+10, 6, 6);
   
   // Fire ring stones
   c.fillStyle="rgba(30,28,26,0.9)";
   for(let i=0;i<6;i++){
     const angle = (i/6)*Math.PI*2;
-    const sx = cx + Math.cos(angle)*12;
-    const sy = cy + 3 + Math.sin(angle)*5;
+    const sx = cx + Math.cos(angle)*10;
+    const sy = cy + 3 + Math.sin(angle)*4;
     c.beginPath();
-    c.ellipse(sx,sy,4,3,0,0,Math.PI*2);
+    c.ellipse(sx,sy,3,2.5,0,0,Math.PI*2);
     c.fill();
   }
   
@@ -834,18 +715,16 @@ function drawCampfire(w,h,t){
   c.fillRect(-10,-2,20,4);
   c.restore();
   
-  // Fire flames
+  // Fire flames - smaller, calmer
   const flames = [
-    {ox:0, h:16+flicker*8, w:5, color:"rgba(255,200,80,"},
-    {ox:-3, h:10+flicker*5, w:3, color:"rgba(255,150,50,"},
-    {ox:3, h:12+flicker*6, w:4, color:"rgba(255,120,30,"},
-    {ox:-1, h:18+flicker*10, w:4, color:"rgba(255,230,120,"},
-    {ox:2, h:14+flicker*7, w:3, color:"rgba(255,180,60,"},
+    {ox:0, h:10+flicker*4, w:3, color:"rgba(255,200,80,"},
+    {ox:-2, h:7+flicker*3, w:2, color:"rgba(255,150,50,"},
+    {ox:2, h:8+flicker*3, w:2.5, color:"rgba(255,120,30,"},
   ];
   
   flames.forEach((f,i)=>{
-    const wob = Math.sin(campfireFlicker+i)*2;
-    c.fillStyle=f.color+"0.8)";
+    const wob = Math.sin(campfireFlicker+i)*1.5;
+    c.fillStyle=f.color+"0.7)";
     c.beginPath();
     c.moveTo(cx+f.ox-f.w+wob, cy);
     c.quadraticCurveTo(cx+f.ox+wob*0.5, cy-f.h*0.5, cx+f.ox+wob, cy-f.h);
@@ -854,17 +733,15 @@ function drawCampfire(w,h,t){
     c.fill();
   });
   
-  // Sparks
-  if(Math.random()>0.92){
-    for(let s=0;s<2;s++){
-      const spark = {
-        x: cx + (Math.random()-0.5)*10,
-        y: cy - 15 - Math.random()*10,
-        vx: (Math.random()-0.5)*0.5,
-        vy: -0.5-Math.random()*0.5,
-      };
-      gs.sparks.push(spark);
-    }
+  // Sparks - very occasional, just a few
+  if(Math.random()>0.985){
+    const spark = {
+      x: cx + (Math.random()-0.5)*6,
+      y: cy - 10 - Math.random()*5,
+      vx: (Math.random()-0.5)*0.3,
+      vy: -0.3-Math.random()*0.3,
+    };
+    gs.sparks.push(spark);
   }
   
   // Draw existing sparks
@@ -872,12 +749,12 @@ function drawCampfire(w,h,t){
     const s=gs.sparks[i];
     s.x+=s.vx;
     s.y+=s.vy;
-    s.vy+=0.01; // slight gravity
-    const age = (cy-15-s.y)/40;
+    s.vy+=0.008; // gentler gravity
+    const age = (cy-10-s.y)/30;
     if(age>1 || s.y>cy){gs.sparks.splice(i,1);continue;}
-    c.fillStyle=`rgba(255,200,100,${0.8-age*0.8})`;
+    c.fillStyle=`rgba(255,180,80,${0.6-age*0.6})`;
     c.beginPath();
-    c.arc(s.x,s.y,1.5,0,Math.PI*2);
+    c.arc(s.x,s.y,1,0,Math.PI*2);
     c.fill();
   }
 }
@@ -942,12 +819,12 @@ function tap(e){
     gs.phase="playing";gs.score=0;
     gs.drops=[];gs.catchPs=[];gs.ripples=[];gs.sparks=[];
     gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;
-    mountains=null;forestData=null;bushData=null;grassData=null;rocksData=null;shadowsData=null;scheduleGlow();
+    scheduleGlow();
     resetRain();return;
   }
 
   if(gs.phase==="quote"){
-    gs.phase="menu";gs.score=0;mountains=null;forestData=null;bushData=null;grassData=null;rocksData=null;shadowsData=null;
+    gs.phase="menu";gs.score=0;
     gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;resetRain();return;
   }
 
@@ -1007,9 +884,9 @@ function drawDrop(d){
 function loop(){
   const now=Date.now(),{w:cw,h:ch}=getSize();
 
-  // === BG — dark moody night sky ===
+  // === BG — night sky, slightly brighter for mobile visibility ===
   const bg=c.createLinearGradient(0,0,0,ch);
-  bg.addColorStop(0,"#0a0c14");bg.addColorStop(0.3,"#111318");bg.addColorStop(0.6,"#181c28");bg.addColorStop(1,"#1c1f2e");
+  bg.addColorStop(0,"#141828");bg.addColorStop(0.3,"#1a1e2e");bg.addColorStop(0.6,"#242838");bg.addColorStop(1,"#282c3e");
   c.fillStyle=bg;c.fillRect(0,0,cw,ch);
 
   const isActive=gs.phase==="menu"||gs.phase==="playing"||gs.phase==="ending"||gs.phase==="quote";
@@ -1162,16 +1039,16 @@ function loop(){
     c.fillText("mountain lake",cw/2,ch/2+52);
   }
 
-  // === ENDING — GOLDEN SUNRISE TRANSITION ===
+  // === ENDING — DARK MOODY TRANSITION ===
   if(gs.phase==="ending"){
     gs.endT+=0.005;
     const t=Math.min(gs.endT,1);
 
     if(!gs.rainFaded&&t>0.2){if(rainG&&actx)rainG.gain.linearRampToValueAtTime(0.05,actx.currentTime+4);gs.rainFaded=true;}
 
-    // Interpolate to golden sunrise
-    const r1=Math.floor(10+(254-10)*t),g1=Math.floor(12+(252-12)*t),b1=Math.floor(20+(232-20)*t);
-    const r2=Math.floor(28+(254-28)*t),g2=Math.floor(31+(240-31)*t),b2=Math.floor(46+(138-46)*t);
+    // Fade to dark gray
+    const r1=Math.floor(20+(30-20)*t),g1=Math.floor(24+(35-24)*t),b1=Math.floor(40+(50-40)*t);
+    const r2=Math.floor(28+(25-28)*t),g2=Math.floor(31+(28-31)*t),b2=Math.floor(46+(35-46)*t);
     const tbg=c.createLinearGradient(0,0,0,ch);
     tbg.addColorStop(0,`rgb(${r1},${g1},${b1})`);tbg.addColorStop(1,`rgb(${r2},${g2},${b2})`);
     c.fillStyle=tbg;c.fillRect(0,0,cw,ch);
@@ -1187,86 +1064,76 @@ function loop(){
     if(t>0.3){
       if(!gs.rbPs||gs.rbPs.length===0){
         gs.rbPs=[];
-        const cols=["#fef08a","#fde68a","#fbbf24","#f59e0b","#fca5a5","#d8b4fe","#fed7aa"];
-        for(let i=0;i<120;i++)gs.rbPs.push({
-          x:Math.random()*cw,y:Math.random()*ch,size:3+Math.random()*7,
+        // Yellowish-orange fire colors
+        const cols=["#fbbf24","#f59e0b","#fcd34d","#fde68a","#fdba74","#fb923c","#fed7aa"];
+        for(let i=0;i<100;i++)gs.rbPs.push({
+          x:Math.random()*cw,y:Math.random()*ch,size:2+Math.random()*5,
           color:cols[Math.floor(Math.random()*cols.length)],
-          speed:0.2+Math.random()*0.6,wobble:Math.random()*Math.PI*2,
-          wobbleSpd:0.01+Math.random()*0.02,opacity:0,
-          target:0.3+Math.random()*0.5,shape:Math.random()>0.5?"c":"d",
+          speed:0.15+Math.random()*0.4,wobble:Math.random()*Math.PI*2,
+          wobbleSpd:0.008+Math.random()*0.015,opacity:0,
+          target:0.4+Math.random()*0.4,shape:Math.random()>0.5?"c":"d",
         });
       }
       const po=(t-0.3)/0.7;
       gs.rbPs.forEach(p=>{
-        p.wobble+=p.wobbleSpd;p.y-=p.speed*0.4;p.x+=Math.sin(p.wobble)*0.4;
+        p.wobble+=p.wobbleSpd;p.y-=p.speed*0.3;p.x+=Math.sin(p.wobble)*0.3;
         if(p.y<-10)p.y=ch+10;
-        c.save();c.globalAlpha=p.target*po*0.6;c.fillStyle=p.color;
+        c.save();c.globalAlpha=p.target*po*0.5;c.fillStyle=p.color;
         if(p.shape==="c"){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();}
         else{c.translate(p.x,p.y);c.rotate(Math.PI/4);c.fillRect(-p.size/2,-p.size/2,p.size,p.size);}
         c.restore();
       });
     }
 
-    if(t>0.6){
-      c.save();c.globalAlpha=Math.min((t-0.6)/0.3,1)*0.5;
-      c.fillStyle="rgba(140,100,30,1)";c.font="600 22px 'Helvetica Neue',sans-serif";
-      c.textAlign="center";c.fillText("summit",cw/2,ch/2-10);c.restore();
-    }
-
-    if(gs.endT>1.3)gs.phase="quote";
+    if(gs.endT>1.3){gs.phase="quote";gs.quoteStartTime=Date.now();}
   }
 
-  // === QUOTE SCREEN — GOLDEN SUNRISE ===
+  // === QUOTE SCREEN — DARK MOODY ===
   if(gs.phase==="quote"){
+    // Dark gray background
     const rg=c.createLinearGradient(0,0,0,ch);
-    rg.addColorStop(0,"#fefce8");rg.addColorStop(0.3,"#fef08a");rg.addColorStop(0.65,"#fde68a");rg.addColorStop(1,"#fef3c7");
+    rg.addColorStop(0,"#1e2330");rg.addColorStop(0.5,"#1a1f2a");rg.addColorStop(1,"#151820");
     c.fillStyle=rg;c.fillRect(0,0,cw,ch);
 
-    // Sunrise glow
-    const sx=cw*0.5,sy=ch*0.2;
-    const sg=c.createRadialGradient(sx,sy,0,sx,sy,120);
-    sg.addColorStop(0,"rgba(253,224,71,0.7)");sg.addColorStop(0.3,"rgba(253,224,71,0.3)");sg.addColorStop(1,"rgba(253,224,71,0)");
-    c.fillStyle=sg;c.beginPath();c.arc(sx,sy,120,0,Math.PI*2);c.fill();
-    c.fillStyle="rgba(255,255,255,0.9)";c.beginPath();c.arc(sx,sy,25,0,Math.PI*2);c.fill();
-
-    // Rainbow arc
-    const arcY=ch*1.6,arcR=cw*0.9;
-    ["#eab308","#f59e0b","#f97316","#ef4444","#ec4899","#a855f7"].forEach((col,i)=>{
-      c.save();c.strokeStyle=col;c.globalAlpha=0.3;c.lineWidth=12;
-      c.beginPath();c.arc(cw*0.5,arcY,arcR+i*14,Math.PI+0.15,Math.PI*2-0.15);c.stroke();c.restore();
-    });
-
-    // Particles
+    // Floating particles
     if(gs.rbPs)gs.rbPs.forEach(p=>{
-      p.wobble+=p.wobbleSpd;p.y-=p.speed*0.25;p.x+=Math.sin(p.wobble)*0.3;
-      if(p.opacity<p.target)p.opacity+=0.008;
+      p.wobble+=p.wobbleSpd;p.y-=p.speed*0.2;p.x+=Math.sin(p.wobble)*0.25;
+      if(p.opacity<p.target)p.opacity+=0.006;
       if(p.y<-10){p.y=ch+10;p.x=Math.random()*cw;}
-      c.save();c.globalAlpha=p.opacity;c.fillStyle=p.color;
+      c.save();c.globalAlpha=p.opacity*0.7;c.fillStyle=p.color;
       if(p.shape==="c"){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();}
       else{c.translate(p.x,p.y);c.rotate(Math.PI/4);c.fillRect(-p.size/2,-p.size/2,p.size,p.size);}
       c.restore();
     });
 
-    // Quote
-    c.save();
-    const words=gs.endQuote.split(" ");
-    let lines=[],line="";
-    words.forEach(w=>{const test=line?line+" "+w:w;if(test.length>22){lines.push(line);line=w;}else line=test;});
-    if(line)lines.push(line);
-    const lh=32,qtH=lines.length*lh+36,qtW=cw*0.85,qtX=(cw-qtW)/2,qtY=ch/2-qtH/2-10;
-    c.fillStyle="rgba(255,255,255,0.4)";
-    c.beginPath();c.roundRect(qtX,qtY,qtW,qtH,14);c.fill();
-    c.fillStyle="rgba(100,70,10,0.9)";
-    c.font="italic 600 22px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";
-    lines.forEach((l,i)=>c.fillText(l,cw/2,qtY+28+i*lh));
-    c.restore();
+    // Quote - fades out after 10 seconds
+    const quoteAge = (Date.now() - gs.quoteStartTime) / 1000;
+    const quoteFade = quoteAge < 8 ? 1 : Math.max(0, 1 - (quoteAge - 8) / 2);
+    
+    if(quoteFade > 0){
+      c.save();
+      c.globalAlpha = quoteFade;
+      const words=gs.endQuote.split(" ");
+      let lines=[],line="";
+      words.forEach(w=>{const test=line?line+" "+w:w;if(test.length>22){lines.push(line);line=w;}else line=test;});
+      if(line)lines.push(line);
+      const lh=32,qtH=lines.length*lh+36,qtW=cw*0.85,qtX=(cw-qtW)/2,qtY=ch/2-qtH/2-20;
+      // Dark semi-transparent box
+      c.fillStyle="rgba(40,45,55,0.6)";
+      c.beginPath();c.roundRect(qtX,qtY,qtW,qtH,14);c.fill();
+      // Light text
+      c.fillStyle="rgba(220,225,235,0.95)";
+      c.font="italic 600 22px 'Helvetica Neue',sans-serif";
+      c.textAlign="center";
+      lines.forEach((l,i)=>c.fillText(l,cw/2,qtY+28+i*lh));
+      c.restore();
+    }
 
-    // Tap button
+    // Tap button - always visible
     const btnW=140,btnH=34,btnX=(cw-btnW)/2,btnY=ch-55;
-    c.fillStyle="rgba(255,255,255,0.3)";
+    c.fillStyle="rgba(60,65,80,0.5)";
     c.beginPath();c.roundRect(btnX,btnY,btnW,btnH,17);c.fill();
-    c.fillStyle="rgba(100,70,10,0.7)";c.font="600 13px 'Helvetica Neue',sans-serif";
+    c.fillStyle="rgba(200,205,215,0.8)";c.font="600 13px 'Helvetica Neue',sans-serif";
     c.textAlign="center";c.fillText("tap to continue",cw/2,btnY+btnH/2+4);
   }
 
