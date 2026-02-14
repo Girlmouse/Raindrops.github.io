@@ -63,3 +63,12 @@ New scenes and refinements are continuously being added.
 
 <img width="1188" height="680" alt="GM project" src="https://github.com/user-attachments/assets/f7bd6393-4b9e-4a7e-bb62-7af5ec4d1524" />
 
+A quiet collection of rainy worlds — one moment at a time.
+
+[![Play Raindrops](https://img.shields.io/badge/Play-Raindrops-6b4bff?style=for-the-badge)](https://girlmouse.github.io/Raindrops.github.io/)
+
+## Scenes
+City · Ocean · Mountain · Forest · Swamp · Noir · Space
+
+
+
