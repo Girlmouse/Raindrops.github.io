@@ -18,7 +18,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 <canvas id="g"></canvas>
 <p class="sub">RAINDROPS — A moment in time</p>
 <script>
-const DROPS_TO_WIN=30,RAIN_INT=45,GLOW_MIN_GAP=1000,GLOW_MAX_GAP=2000,HIT_R=45,DURATION=240,DENSE=8;
+const DROPS_TO_WIN=30,RAIN_INT=45,GLOW_MIN_GAP=1000,GLOW_MAX_GAP=2000,HIT_R=45,DENSE=8;
 const QUOTES=["The swamp keeps its secrets in still water.","Decay feeds new life. So does rest.","In murky depths, patience finds its way.","The cypress stands because it learned to bend.","Let the fog settle. Clarity comes.","Even stagnant water reflects the sky.","The swamp doesn't hurry. Neither should you.","What seems still is always moving, slowly.","Ancient things know the value of stillness.","The mist hides nothing—it reveals patience."];
 
 let actx=null,started=false,rainG=null;
@@ -110,7 +110,7 @@ function mkFx(x,y){const ps=[];for(let i=0;i<14;i++){const a=(Math.PI*2*i)/14+Ma
 function mkRip(x,y){return{x,y,radius:3,opacity:0.35,speed:0.8};}
 function getPos(e){const r=cv.getBoundingClientRect();const sx=(cv.width/2)/r.width,sy=(cv.height/2)/r.height;const px=e.touches?e.touches[0].clientX:e.clientX;const py=e.touches?e.touches[0].clientY:e.clientY;return{x:(px-r.left)*sx,y:(py-r.top)*sy};}
 
-function tap(e){e.preventDefault();initAudio();if(gs.phase==="menu"){gs.phase="playing";gs.score=0;gs.timeLeft=DURATION;gs.drops=[];gs.catchPs=[];gs.ripples=[];gs.endT=0;gs.rainFaded=false;gs.rbPs=null;scheduleGlow();resetRain();lastTick=Date.now();return;}if(gs.phase==="quote"){gs.phase="menu";gs.score=0;gs.rainFaded=false;gs.rbPs=null;resetRain();return;}if(gs.phase!=="playing")return;const{x,y}=getPos(e);let best=Infinity,bi=-1;for(let i=0;i<gs.drops.length;i++){const d=gs.drops[i];if(!d.isGlowing||d.caught)continue;const dist=Math.hypot(x-d.x,y-d.y);if(dist<HIT_R&&dist<best){best=dist;bi=i;}}if(bi>=0){const d=gs.drops[bi];d.caught=true;gs.score++;gs.catchPs.push(...mkFx(d.x,d.y));gs.ripples.push(mkRip(d.x,d.y));chime();if(gs.score>=DROPS_TO_WIN){gs.phase="ending";gs.endT=0;gs.endQuote=QUOTES[Math.floor(Math.random()*QUOTES.length)];playEnd();}}else{gs.ripples.push(mkRip(x,y));}}
+function tap(e){e.preventDefault();initAudio();if(gs.phase==="menu"){gs.phase="playing";gs.score=0;gs.drops=[];gs.catchPs=[];gs.ripples=[];gs.endT=0;gs.rainFaded=false;gs.rbPs=null;scheduleGlow();resetRain();lastTick=Date.now();return;}if(gs.phase==="quote"){gs.phase="menu";gs.score=0;gs.rainFaded=false;gs.rbPs=null;resetRain();return;}if(gs.phase!=="playing")return;const{x,y}=getPos(e);let best=Infinity,bi=-1;for(let i=0;i<gs.drops.length;i++){const d=gs.drops[i];if(!d.isGlowing||d.caught)continue;const dist=Math.hypot(x-d.x,y-d.y);if(dist<HIT_R&&dist<best){best=dist;bi=i;}}if(bi>=0){const d=gs.drops[bi];d.caught=true;gs.score++;gs.catchPs.push(...mkFx(d.x,d.y));gs.ripples.push(mkRip(d.x,d.y));chime();if(gs.score>=DROPS_TO_WIN){gs.phase="ending";gs.endT=0;gs.endQuote=QUOTES[Math.floor(Math.random()*QUOTES.length)];playEnd();}}else{gs.ripples.push(mkRip(x,y));}}
 cv.addEventListener("click",tap);cv.addEventListener("touchstart",tap,{passive:false});
 
 function drawDrop(d){c.save();if(d.isGlowing&&!d.caught){d.pulsePhase+=0.04;const p=0.6+Math.sin(d.pulsePhase)*0.4;const og=c.createRadialGradient(d.x,d.y,0,d.x,d.y,25);og.addColorStop(0,`rgba(140,255,60,${0.32*p})`);og.addColorStop(0.35,`rgba(100,240,40,${0.18*p})`);og.addColorStop(0.65,`rgba(60,200,25,${0.08*p})`);og.addColorStop(1,"rgba(40,160,15,0)");c.fillStyle=og;c.beginPath();c.ellipse(d.x,d.y,20,26,0,0,Math.PI*2);c.fill();const ig=c.createRadialGradient(d.x,d.y,0,d.x,d.y,9);ig.addColorStop(0,`rgba(200,255,140,${0.6*p})`);ig.addColorStop(1,`rgba(140,245,70,${0.25*p})`);c.fillStyle=ig;c.beginPath();c.ellipse(d.x,d.y,6,9,0,0,Math.PI*2);c.fill();c.fillStyle=`rgba(220,255,180,${0.85*p*d.fadeOut})`;c.beginPath();c.ellipse(d.x,d.y,3.5,5.5,0,0,Math.PI*2);c.fill();c.fillStyle=`rgba(245,255,230,${0.9*p*d.fadeOut})`;c.beginPath();c.ellipse(d.x,d.y,1.8,3,0,0,Math.PI*2);c.fill();}else{c.strokeStyle=`rgba(120,160,100,${d.opacity*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";c.beginPath();c.moveTo(d.x+d.drift*5,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();}c.restore();}
@@ -118,8 +118,7 @@ function drawDrop(d){c.save();if(d.isGlowing&&!d.caught){d.pulsePhase+=0.04;cons
 let lastTick=Date.now();
 function loop(){
   const now=Date.now(),{w:cw,h:ch}=getSize();
-  if(gs.phase==="playing"){const dt=now-lastTick;if(dt>=1000){gs.timeLeft=Math.max(0,gs.timeLeft-Math.floor(dt/1000));lastTick=now-(dt%1000);if(gs.timeLeft<=0){gs.phase="ending";gs.endT=0;gs.endQuote=QUOTES[Math.floor(Math.random()*QUOTES.length)];playEnd();}}}
-  
+if(gs.phase==="playing"){}  
   const bg=c.createLinearGradient(0,0,0,ch);
   bg.addColorStop(0,"#0a1208");bg.addColorStop(0.12,"#0f1a0c");bg.addColorStop(0.25,"#162210");bg.addColorStop(0.40,"#1e2d14");bg.addColorStop(0.55,"#253818");bg.addColorStop(0.70,"#2d4420");bg.addColorStop(1,"#355028");
   c.fillStyle=bg;c.fillRect(0,0,cw,ch);
