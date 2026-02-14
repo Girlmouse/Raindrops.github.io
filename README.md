@@ -67,6 +67,8 @@ A quiet collection of rainy worlds — one moment at a time.
 
 [![Play Raindrops](https://img.shields.io/badge/Play-Raindrops-6b4bff?style=for-the-badge)](https://girlmouse.github.io/Raindrops.github.io/)
 
+<video src="rain-preview.mp4" autoplay muted loop width="700"></video>
+
 ## Scenes
 City · Ocean · Mountain · Forest · Swamp · Noir · Space
 
