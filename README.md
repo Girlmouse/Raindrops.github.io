@@ -1,6 +1,3 @@
-# Raindrops
-A relaxing game about catching special raindrops when you need a break.
-
 🌧 Raindrops
 
 A moment in time.
@@ -63,3 +60,6 @@ The goal is to create a quiet, immersive moment rather than a traditional game l
 
 This project is actively evolving.
 New scenes and refinements are continuously being added.
+
+<img width="1188" height="680" alt="GM project" src="https://github.com/user-attachments/assets/f7bd6393-4b9e-4a7e-bb62-7af5ec4d1524" />
+
