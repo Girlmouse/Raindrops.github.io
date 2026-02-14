@@ -113,42 +113,12 @@ if (!c.roundRect) {
 }
 let sky=null;
 function getSize(){
-  const aspect = 16 / 9;
-
-  const vw = window.innerWidth;
-  const vh = window.visualViewport
-    ? window.visualViewport.height
-    : window.innerHeight;
-
-  let w = vw * 0.98;
-  let h = vh * 0.90;
-
-  if (w / h > aspect) {
-    w = h * aspect;
-  } else {
-    h = w / aspect;
-  }
-
-  return {
-    w: Math.floor(w),
-    h: Math.floor(h)
-  };
+  const mw=Math.min(window.innerWidth*0.98,800);
+  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.88;
+  let w=mw,h=w/(4/3);if(h>mh){h=mh;w=h*(4/3);}if(w>mw){w=mw;h=w/(4/3);}
+  return{w:Math.floor(w),h:Math.floor(h)};
 }
-function resize(){
-  const { w, h } = getSize();
-
-  const scale = window.devicePixelRatio || 1;
-
-  cv.width  = Math.floor(w * scale);
-  cv.height = Math.floor(h * scale);
-
-  cv.style.width  = w + "px";
-  cv.style.height = h + "px";
-
-  c.setTransform(scale, 0, 0, scale, 0, 0);
-
-  sky = null; // optional but recommended
-}
+function resize(){const{w,h}=getSize();cv.width=w*2;cv.height=h*2;cv.style.width=w+"px";cv.style.height=h+"px";c.setTransform(2,0,0,2,0,0);sky=null;}
 resize();
 window.addEventListener("resize", resize);
 
@@ -233,8 +203,10 @@ function scheduleGlow(){
 
 function mkDrop(w,h,forceGlow){
   const gl=forceGlow||false;
+  const GLOW_MARGIN=0.15;
+  const xPos=gl?w*GLOW_MARGIN+Math.random()*w*(1-2*GLOW_MARGIN):Math.random()*w;
   return{
-    x:Math.random()*w,y:-10-Math.random()*50,
+    x:xPos,y:-10-Math.random()*50,
     speed:gl?1.2+Math.random()*0.5:26.0+Math.random()*18.0,
     length:gl?18+Math.random()*10:3+Math.random()*8,
     opacity:gl?1:0.08+Math.random()*0.50,
@@ -242,7 +214,7 @@ function mkDrop(w,h,forceGlow){
     width:gl?2.5:0.5+Math.random()*0.7,
     caught:false,fadeOut:1,
     grounded: false,
-    drift:(Math.random()-0.5)*0.4,
+    drift:gl?0:(Math.random()-0.5)*0.4,
   };
 }
 
@@ -321,17 +293,25 @@ cv.addEventListener("touchstart",tap,{passive:false});
 function drawDrop(d){
   c.save();
   if(d.isGlowing&&!d.caught){
-    d.pulsePhase+=0.04;const p=0.85+Math.sin(d.pulsePhase)*0.15;
-    const og=c.createRadialGradient(d.x,d.y,0,d.x,d.y,22);
-    og.addColorStop(0,`rgba(200,160,255,${0.07*p})`);og.addColorStop(0.4,`rgba(180,140,240,${0.03*p})`);og.addColorStop(1,"rgba(180,140,240,0)");
-    c.fillStyle=og;c.beginPath();c.arc(d.x,d.y,22,0,Math.PI*2);c.fill();
-    const ig=c.createRadialGradient(d.x,d.y,0,d.x,d.y,9);
-    ig.addColorStop(0,`rgba(225,210,255,${0.15*p})`);ig.addColorStop(1,`rgba(180,150,240,${0.05*p})`);
-    c.fillStyle=ig;c.beginPath();c.arc(d.x,d.y,12,0,Math.PI*2);c.fill();
-    c.strokeStyle=`rgba(225,210,255,${0.8*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";
-    c.beginPath();c.moveTo(d.x,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();
-    c.fillStyle=`rgba(255,255,255,${0.85*p*d.fadeOut})`;
-    c.beginPath();c.arc(d.x,d.y,2.5,0,Math.PI*2);c.fill();
+    d.pulsePhase+=0.04;const p=0.6+Math.sin(d.pulsePhase)*0.4;
+    // Outer purple glow
+    const og=c.createRadialGradient(d.x,d.y,0,d.x,d.y,26);
+    og.addColorStop(0,`rgba(180,120,255,${0.35*p})`);
+    og.addColorStop(0.35,`rgba(150,100,240,${0.18*p})`);
+    og.addColorStop(0.65,`rgba(130,80,220,${0.08*p})`);
+    og.addColorStop(1,"rgba(120,70,200,0)");
+    c.fillStyle=og;c.beginPath();c.ellipse(d.x,d.y,22,28,0,0,Math.PI*2);c.fill();
+    // Inner glow
+    const ig=c.createRadialGradient(d.x,d.y,0,d.x,d.y,10);
+    ig.addColorStop(0,`rgba(220,200,255,${0.6*p})`);
+    ig.addColorStop(1,`rgba(180,150,250,${0.25*p})`);
+    c.fillStyle=ig;c.beginPath();c.ellipse(d.x,d.y,7,10,0,0,Math.PI*2);c.fill();
+    // Core - oval shape like regular drops
+    c.fillStyle=`rgba(240,230,255,${0.85*p*d.fadeOut})`;
+    c.beginPath();c.ellipse(d.x,d.y,4,6,0,0,Math.PI*2);c.fill();
+    // Bright center
+    c.fillStyle=`rgba(255,255,255,${0.95*p*d.fadeOut})`;
+    c.beginPath();c.ellipse(d.x,d.y,2,3.5,0,0,Math.PI*2);c.fill();
   } else {
     c.strokeStyle=`rgba(150,145,175,${d.opacity*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";
     c.beginPath();c.moveTo(d.x+d.drift*5,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();
@@ -353,6 +333,28 @@ const ch = rect.height;
   const bg=c.createLinearGradient(0,0,0,ch);
   bg.addColorStop(0,"#08060e");bg.addColorStop(0.4,"#0f0a1e");bg.addColorStop(1,"#1a1025");
   c.fillStyle=bg;c.fillRect(0,0,cw,ch);
+
+  // Static stars - not blinking
+  const stars=[
+    {x:0.05,y:0.06,size:1.1,alpha:0.5},
+    {x:0.12,y:0.14,size:0.9,alpha:0.4},
+    {x:0.22,y:0.08,size:1.3,alpha:0.55},
+    {x:0.30,y:0.18,size:0.8,alpha:0.35},
+    {x:0.38,y:0.05,size:1.0,alpha:0.45},
+    {x:0.48,y:0.12,size:1.2,alpha:0.5},
+    {x:0.55,y:0.03,size:0.9,alpha:0.4},
+    {x:0.65,y:0.10,size:1.1,alpha:0.45},
+    {x:0.72,y:0.16,size:0.85,alpha:0.38},
+    {x:0.82,y:0.07,size:1.25,alpha:0.52},
+    {x:0.90,y:0.13,size:0.95,alpha:0.42},
+    {x:0.96,y:0.04,size:1.0,alpha:0.48},
+  ];
+  stars.forEach(star=>{
+    c.fillStyle=`rgba(220,210,240,${star.alpha})`;
+    c.beginPath();
+    c.arc(star.x*cw,star.y*ch,star.size,0,Math.PI*2);
+    c.fill();
+  });
 
   const isActive=gs.phase==="menu"||gs.phase==="playing"||gs.phase==="ending"||gs.phase==="quote";
 
