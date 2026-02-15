@@ -157,14 +157,21 @@
         }
 
         .glow-drop {
-            width: 30px;
-            height: 42px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(200,230,255,0.8) 100%);
-            border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
-            box-shadow: 0 0 15px 8px rgba(255, 255, 255, 0.4);
-            animation: pulse 3s ease-in-out infinite;
+            width: 32px;
+            height: 44px;
             cursor: pointer;
             transition: transform 0.2s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .glow-drop svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.7));
+            animation: glowPulse 3s ease-in-out infinite;
         }
 
         .glow-drop:hover {
@@ -175,6 +182,15 @@
             transform: scale(0.95);
         }
 
+        @keyframes glowPulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+            }
+            50% {
+                filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.9));
+            }
+        }
+
         .earth {
             width: 38px;
             height: 38px;
@@ -182,7 +198,7 @@
             background: radial-gradient(circle at 30% 30%, #5eb5e0 0%, #489fd4 40%, #2a7ab8 70%, #1a5a8a 100%);
             position: relative;
             box-shadow: 0 0 15px 8px rgba(255, 255, 255, 0.4);
-            animation: pulse 3s ease-in-out infinite;
+            animation: earthPulse 3s ease-in-out infinite;
             cursor: pointer;
             transition: transform 0.2s ease;
             overflow: hidden;
@@ -228,7 +244,7 @@
                 4px -14px 0 2px rgba(255, 255, 255, 0.5);
         }
 
-        @keyframes pulse {
+        @keyframes earthPulse {
             0%, 100% {
                 box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0.3);
             }
@@ -365,7 +381,11 @@
 
         <!-- Middle section: glow drop, pick a place, earth -->
         <div class="middle-section">
-            <div class="glow-drop" id="glowDrop" title="A message for you"></div>
+            <div class="glow-drop" id="glowDrop" title="A message for you">
+                <svg viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 0 C15 0 0 20 0 28 C0 36 7 42 15 42 C23 42 30 36 30 28 C30 20 15 0 15 0 Z" fill="white"/>
+                </svg>
+            </div>
             <div class="pick-place">
                 <span class="pick-place-text">Pick a place</span>
             </div>
