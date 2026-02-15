@@ -70,5 +70,10 @@ A quiet collection of rainy worlds — one moment at a time.
 ## Scenes
 City · Ocean · Mountain · Forest · Swamp · Noir · Space
 
+## License
+
+All rights reserved © 2026 GirlMouse  
+This project may not be copied, reused, or redistributed without permission.
+
 
 
