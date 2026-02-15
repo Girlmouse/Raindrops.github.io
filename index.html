@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Raindrops — A moment in time</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pangolin&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1b2328;
+            font-family: 'Pangolin', cursive;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 40px 20px 30px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Rainy background */
+        .rain-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .raindrop-bg {
+            position: absolute;
+            color: #8ccbea;
+            opacity: 0.15;
+            font-size: 16px;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-20px);
+            }
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+
+        /* Title */
+        .title {
+            font-size: clamp(36px, 10vw, 56px);
+            color: #a6a6a6;
+            text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+            z-index: 10;
+            text-transform: uppercase;
+            margin-bottom: -10px;
+        }
+
+        /* Cloud section */
+        .cloud-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .cloud {
+            background-color: #a6a6a6;
+            padding: 15px 22px;
+            border-radius: 40px;
+            position: relative;
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .cloud::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 25px;
+            width: 30px;
+            height: 22px;
+            background-color: #a6a6a6;
+            border-radius: 50%;
+        }
+
+        .cloud::after {
+            content: '';
+            position: absolute;
+            top: -18px;
+            left: 48px;
+            width: 38px;
+            height: 30px;
+            background-color: #a6a6a6;
+            border-radius: 50%;
+        }
+
+        .cloud-text {
+            color: #1b2328;
+            font-size: clamp(12px, 3.5vw, 15px);
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .cloud-drops {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .cloud-drop {
+            width: 10px;
+            height: 14px;
+            background-color: #a6a6a6;
+            border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+            opacity: 0.8;
+        }
+
+        .cloud-drop:nth-child(2) {
+            height: 18px;
+            width: 11px;
+            margin-top: 4px;
+        }
+
+        .cloud-drop:nth-child(4) {
+            height: 16px;
+            margin-top: 6px;
+        }
+
+        /* Middle section with glowing elements */
+        .middle-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 350px;
+            z-index: 10;
+            padding: 0 10px;
+        }
+
+        .glow-drop {
+            width: 30px;
+            height: 42px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(200,230,255,0.8) 100%);
+            border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+            box-shadow: 0 0 15px 8px rgba(255, 255, 255, 0.4);
+            animation: pulse 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .glow-drop:hover {
+            transform: scale(1.1);
+        }
+
+        .glow-drop:active {
+            transform: scale(0.95);
+        }
+
+        .earth {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #5eb5e0 0%, #489fd4 40%, #2a7ab8 70%, #1a5a8a 100%);
+            position: relative;
+            box-shadow: 0 0 15px 8px rgba(255, 255, 255, 0.4);
+            animation: pulse 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            overflow: hidden;
+        }
+
+        .earth:hover {
+            transform: scale(1.1);
+        }
+
+        .earth:active {
+            transform: scale(0.95);
+        }
+
+        /* Land masses on Earth */
+        .earth::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 6px;
+            width: 14px;
+            height: 11px;
+            background-color: #4a9f4a;
+            border-radius: 40% 60% 50% 50%;
+            transform: rotate(-10deg);
+            box-shadow: 
+                8px 12px 0 -2px #4a9f4a,
+                -2px -4px 0 1px rgba(255, 255, 255, 0.7),
+                12px -2px 0 2px rgba(255, 255, 255, 0.5);
+        }
+
+        .earth::after {
+            content: '';
+            position: absolute;
+            bottom: 9px;
+            right: 6px;
+            width: 10px;
+            height: 9px;
+            background-color: #4a9f4a;
+            border-radius: 50% 40% 60% 40%;
+            transform: rotate(20deg);
+            box-shadow:
+                -12px -8px 0 1px rgba(255, 255, 255, 0.6),
+                4px -14px 0 2px rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 30px 15px rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        .pick-place {
+            background-color: #64899b;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .pick-place-text {
+            color: #aad6ef;
+            font-size: clamp(12px, 3.5vw, 15px);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Scene buttons */
+        .scenes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            max-width: 350px;
+            z-index: 10;
+        }
+
+        .scene-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .scene-btn {
+            padding: 10px 16px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            font-family: 'Pangolin', cursive;
+            font-size: clamp(12px, 3.5vw, 15px);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            min-width: 85px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .scene-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .scene-btn:active {
+            transform: translateY(1px);
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Individual scene button colors */
+        .btn-ocean {
+            background-color: #075c89;
+            color: #46809f;
+        }
+
+        .btn-forest {
+            background-color: #265240;
+            color: #8bc99a;
+        }
+
+        .btn-mountain {
+            background-color: #314b69;
+            color: #c3c3c3;
+        }
+
+        .btn-swamp {
+            background-color: #17290f;
+            color: #58891a;
+        }
+
+        .btn-noir {
+            background-color: #1b2328;
+            color: #ffffff;
+        }
+
+        .btn-city {
+            background-color: #2a1557;
+            color: #ffbd59;
+        }
+
+        /* Audio elements hidden */
+        audio {
+            display: none;
+        }
+
+        /* Footer tagline */
+        .tagline {
+            color: #a6a6a6;
+            opacity: 0.5;
+            font-size: 12px;
+            z-index: 10;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Animated rain background -->
+        <div class="rain-container" id="rainContainer"></div>
+
+        <!-- Title -->
+        <h1 class="title">Raindrops</h1>
+
+        <!-- Cloud with message -->
+        <div class="cloud-section">
+            <div class="cloud">
+                <p class="cloud-text">
+                    Watch the rain.<br>
+                    Catch some drops.<br>
+                    Stay as long as you want.
+                </p>
+            </div>
+            <div class="cloud-drops">
+                <div class="cloud-drop"></div>
+                <div class="cloud-drop"></div>
+                <div class="cloud-drop"></div>
+                <div class="cloud-drop"></div>
+                <div class="cloud-drop"></div>
+            </div>
+        </div>
+
+        <!-- Middle section: glow drop, pick a place, earth -->
+        <div class="middle-section">
+            <div class="glow-drop" id="glowDrop" title="A message for you"></div>
+            <div class="pick-place">
+                <span class="pick-place-text">Pick a place</span>
+            </div>
+            <div class="earth" id="earth" title="Somewhere special"></div>
+        </div>
+
+        <!-- Scene selection buttons -->
+        <div class="scenes-container">
+            <div class="scene-row">
+                <a href="ocean.html" class="scene-btn btn-ocean" data-scene="ocean">Ocean</a>
+                <a href="forest.html" class="scene-btn btn-forest" data-scene="forest">Forest</a>
+                <a href="mountain.html" class="scene-btn btn-mountain" data-scene="mountain">Mountain</a>
+            </div>
+            <div class="scene-row">
+                <a href="swamp.html" class="scene-btn btn-swamp" data-scene="swamp">Swamp</a>
+                <a href="noir.html" class="scene-btn btn-noir" data-scene="noir">Noir</a>
+                <a href="city.html" class="scene-btn btn-city" data-scene="city">City</a>
+            </div>
+        </div>
+
+        <p class="tagline">Raindrops — A moment in time</p>
+    </div>
+
+    <!-- Audio: ambient rain (looped, quiet) -->
+    <audio id="ambientRain" loop preload="auto">
+        <!-- You'll add your rain audio file here -->
+        <!-- <source src="assets/audio/ambient-rain.mp3" type="audio/mpeg"> -->
+    </audio>
+
+    <!-- Audio: bloop sound for button taps -->
+    <audio id="bloopSound" preload="auto">
+        <!-- You'll add your bloop audio file here -->
+        <!-- <source src="assets/audio/bloop.mp3" type="audio/mpeg"> -->
+    </audio>
+
+    <script>
+        // Create animated rain in background
+        function createRain() {
+            const container = document.getElementById('rainContainer');
+            const dropCount = 40;
+
+            for (let i = 0; i < dropCount; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'raindrop-bg';
+                drop.innerHTML = '💧';
+                drop.style.left = Math.random() * 100 + '%';
+                drop.style.animationDuration = (8 + Math.random() * 8) + 's';
+                drop.style.animationDelay = Math.random() * 10 + 's';
+                drop.style.fontSize = (10 + Math.random() * 8) + 'px';
+                container.appendChild(drop);
+            }
+        }
+
+        // Play bloop sound
+        function playBloop() {
+            const bloop = document.getElementById('bloopSound');
+            if (bloop && bloop.src) {
+                bloop.currentTime = 0;
+                bloop.play().catch(() => {});
+            }
+        }
+
+        // Start ambient rain (requires user interaction first)
+        function startAmbientRain() {
+            const rain = document.getElementById('ambientRain');
+            if (rain && rain.src) {
+                rain.volume = 0.2;
+                rain.play().catch(() => {});
+            }
+        }
+
+        // Handle glowing drop click - go to about page
+        document.getElementById('glowDrop').addEventListener('click', function() {
+            playBloop();
+            setTimeout(() => {
+                window.location.href = 'about.html';
+            }, 150);
+        });
+
+        // Handle Earth click - go to space scene
+        document.getElementById('earth').addEventListener('click', function() {
+            playBloop();
+            setTimeout(() => {
+                window.location.href = 'space.html';
+            }, 150);
+        });
+
+        // Handle scene button clicks
+        document.querySelectorAll('.scene-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                playBloop();
+                // Store the selected scene for "next scene" functionality
+                const scene = this.getAttribute('data-scene');
+                localStorage.setItem('currentScene', scene);
+            });
+        });
+
+        // Start ambient rain on first interaction
+        document.body.addEventListener('click', function initAudio() {
+            startAmbientRain();
+            document.body.removeEventListener('click', initAudio);
+        }, { once: true });
+
+        // Initialize rain animation
+        createRain();
+    </script>
+</body>
+</html>
