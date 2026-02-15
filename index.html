@@ -439,18 +439,12 @@
 
         // Handle glowing drop click - go to about page
         document.getElementById('glowDrop').addEventListener('click', function() {
-            playBloop();
-            setTimeout(() => {
-                window.location.href = 'about.html';
-            }, 150);
+            window.location.href = 'about.html';
         });
 
         // Handle Earth click - go to space scene
         document.getElementById('earth').addEventListener('click', function() {
-            playBloop();
-            setTimeout(() => {
-                window.location.href = 'space.html';
-            }, 150);
+            window.location.href = 'space.html';
         });
 
         // Handle scene button clicks
