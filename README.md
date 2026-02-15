@@ -68,7 +68,10 @@ A quiet collection of rainy worlds — one moment at a time.
 [![Play Raindrops](https://img.shields.io/badge/Play-Raindrops-6b4bff?style=for-the-badge)](https://girlmouse.github.io/Raindrops.github.io/)
 
 
-https://github.com/user-attachments/assets/08b081eb-9712-480a-baa5-6cbcf248b574
+
+
+
+https://github.com/user-attachments/assets/a86c0986-4008-4a2e-8107-57453a93d30b
 
 
 ## Scenes
