@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;}
-body{background:#050810;display:flex;flex-direction:column;align-items:center;justify-content:center;
+body{background:#14102a;display:flex;flex-direction:column;align-items:center;justify-content:center;
 min-height:100vh;min-height:100dvh;font-family:'Helvetica Neue',-apple-system,sans-serif;
 user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden;}
 canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px rgba(180,140,255,0.06);}
@@ -16,14 +16,14 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 </head>
 <body>
 <canvas id="g"></canvas>
- <audio id="rain" preload="metadata" loop playsinline>
-  <source src="audio/Rain-ambiance-city.mp3" type="audio/mpeg">
+
+<audio id="rain" preload="auto" loop playsinline>
+  <source src="audio/city.mp3" type="audio/mpeg">
 </audio>
-  
 <p class="sub">RAINDROPS — A MOMENT IN TIME</p>
 <script>
 // === CONFIG ===
-const DROPS_TO_WIN = 10;
+const DROPS_TO_WIN = 20;
 const RAIN_INT = 5;          // regular rain spawn interval (dense)
 const GLOW_MIN_GAP = 1000;    // minimum ms between glowing drops
 const GLOW_MAX_GAP = 2000;    // maximum ms between glowing drops
@@ -31,26 +31,105 @@ const HIT_R = 80;
 const DENSE = 12;               // regular drops per spawn
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const QUOTES = [
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
-  "May your worries be as short lived as a fart on a windy day.",
+  "breathe",
+  "feel",
+  "listen",
+  "notice",
+  "pause",
+  "reflect",
+  "release",
+  "May your worries be as short lived as a fart on a windy day. — BH",
 ];
+let quoteIndex = 0;
 
 // === AUDIO ===
 let actx = null, started = false;
+let rainBuffer = null;       // decoded AudioBuffer for city.mp3
+let rainGain = null;         // master gain for rain (for fade on ending)
+let rainPlaying = false;
+
+// Load mp3 once, decode into buffer — falls back to <audio> if fetch fails (e.g. file://)
+function loadRainBuffer(){
+  if(!actx || rainBuffer) return;
+  fetch("audio/city.mp3")
+    .then(r => {
+      if(!r.ok) throw new Error("fetch failed");
+      return r.arrayBuffer();
+    })
+    .then(ab => actx.decodeAudioData(ab))
+    .then(buf => {
+      rainBuffer = buf;
+      if(rainPlaying) startCrossfadeLoop();
+    })
+    .catch(e => {
+      console.log("Crossfade unavailable, using <audio> fallback:", e);
+      useFallback();
+    });
+}
+
+function useFallback(){
+  const rainEl = document.getElementById("rain");
+  if(!rainEl) return;
+  rainEl.volume = IS_MOBILE ? 1.0 : 0.6;
+  rainEl.muted = false;
+  if(rainPlaying) rainEl.play().catch(e => console.log("Audio play blocked:", e));
+}
+
+// Crossfade loop state
+let xfSrc = null;       // currently playing source
+let xfTimer = null;     // setTimeout handle for next crossfade
+
+const CROSSFADE_DUR = 2.5;  // seconds of overlap at loop point
+
+function startCrossfadeLoop(){
+  if(!actx || !rainBuffer || !rainGain) return;
+  scheduleNext(actx.currentTime);
+}
+
+function scheduleNext(startAt){
+  if(!actx || !rainBuffer || !rainGain) return;
+
+  const dur = rainBuffer.duration;
+  const src = actx.createBufferSource();
+  src.buffer = rainBuffer;
+
+  // Per-source gain for crossfade
+  const srcGain = actx.createGain();
+  srcGain.gain.setValueAtTime(0, startAt);
+  srcGain.gain.linearRampToValueAtTime(1, startAt + CROSSFADE_DUR); // fade in
+  // Fade out near end
+  const fadeOutAt = startAt + dur - CROSSFADE_DUR;
+  srcGain.gain.setValueAtTime(1, fadeOutAt);
+  srcGain.gain.linearRampToValueAtTime(0, startAt + dur);
+
+  src.connect(srcGain);
+  srcGain.connect(rainGain);
+  src.start(startAt);
+  src.stop(startAt + dur);
+
+  xfSrc = src;
+
+  // Schedule next iteration to overlap by CROSSFADE_DUR
+  const msUntilNext = (dur - CROSSFADE_DUR - (actx.currentTime - startAt)) * 1000;
+  const delay = Math.max(0, (startAt + dur - CROSSFADE_DUR - actx.currentTime) * 1000);
+  xfTimer = setTimeout(() => scheduleNext(actx.currentTime), delay);
+}
+
+function stopRainLoop(){
+  if(xfTimer){ clearTimeout(xfTimer); xfTimer = null; }
+  if(xfSrc){ try{ xfSrc.stop(); } catch(e){} xfSrc = null; }
+}
 
 function initAudio(){
   if(started) return;
   try{
     actx = new (window.AudioContext || window.webkitAudioContext)();
+    // Master rain gain node
+    rainGain = actx.createGain();
+    rainGain.gain.value = IS_MOBILE ? 1.0 : 0.6;
+    rainGain.connect(actx.destination);
     started = true;
+    loadRainBuffer();
   } catch(e) {}
 }
 
@@ -88,12 +167,19 @@ function playEnd(){
   });
 }
 
-// MP3 rain only (HTML <audio id="rain">)
 function resetRain(){
-  const rainEl = document.getElementById("rain");
-  if(!rainEl) return;
-  rainEl.volume = IS_MOBILE ? 1.0 : 0.6;
-  rainEl.muted = false;
+  if(rainBuffer && rainGain && actx){
+    rainGain.gain.cancelScheduledValues(actx.currentTime);
+    rainGain.gain.linearRampToValueAtTime(IS_MOBILE ? 1.0 : 0.6, actx.currentTime + 1);
+    stopRainLoop();
+    rainPlaying = true;
+    startCrossfadeLoop();
+  } else {
+    const rainEl = document.getElementById("rain");
+    if(!rainEl) return;
+    rainEl.volume = IS_MOBILE ? 1.0 : 0.6;
+    rainEl.muted = false;
+  }
 }
 // === CANVAS ===
 
@@ -194,6 +280,7 @@ const gs={
   cloudOff:0,menuPulse:0,
   endT:0,endQuote:"",
   dimAlpha:0,rainFaded:false,
+  rbPs:null,quoteStartTime:0,
 };
 
 // Schedule next glow drop
@@ -209,7 +296,7 @@ function mkDrop(w,h,forceGlow){
     x:xPos,y:-10-Math.random()*50,
     speed:gl?1.2+Math.random()*0.5:26.0+Math.random()*18.0,
     length:gl?18+Math.random()*10:3+Math.random()*8,
-    opacity:gl?1:0.08+Math.random()*0.50,
+    opacity:gl?1:0.18+Math.random()*0.65,
     isGlowing:gl,pulsePhase:Math.random()*Math.PI*2,
     width:gl?2.5:0.5+Math.random()*0.7,
     caught:false,fadeOut:1,
@@ -242,25 +329,53 @@ function tap(e){
   e.preventDefault();
   initAudio();
 
-  const rainEl = document.getElementById("rain");
-  if (rainEl) {
-    rainEl.volume = IS_MOBILE ? 1.0 : 0.6;
-    rainEl.muted = false;
-    rainEl.play().catch(err => console.log("Rain play blocked:", err));
+  // Start rain loop on first tap
+  if(!rainPlaying){
+    rainPlaying = true;
+    if(rainBuffer && rainGain){
+      startCrossfadeLoop();
+    } else if(!rainBuffer){
+      // buffer still loading or fetch failed — useFallback handles it
+      useFallback();
+    }
   }
   const p = getPos(e);
 
   if(gs.phase==="menu"){
     gs.phase="playing";gs.score=0;
     gs.drops=[];gs.catchPs=[];gs.ripples=[];
-    gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;
+    gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;
     sky=null;scheduleGlow();
     resetRain();lastTick=Date.now();return;
   }
 
   if(gs.phase==="quote"){
-    gs.phase="menu";gs.score=0;sky=null;
-    gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;resetRain();return;
+    const rect = cv.getBoundingClientRect();
+    const cw = rect.width, ch = rect.height;
+    const btnW=120,btnH=34,btnY=ch-55,gap=16;
+    const totalW=btnW*2+gap;
+    const btn1X=(cw-totalW)/2;
+    const btn2X=btn1X+btnW+gap;
+    const{x,y}=getPos(e);
+
+    // Home button
+    if(x>=btn2X&&x<=btn2X+btnW&&y>=btnY&&y<=btnY+btnH){
+      stopRainLoop();
+      window.location.href="index.html";
+      return;
+    }
+    // Replay button
+    if(x>=btn1X&&x<=btn1X+btnW&&y>=btnY&&y<=btnY+btnH){
+      stopRainLoop();
+      rainPlaying=false;
+      gs.phase="playing";gs.score=0;sky=null;
+      gs.drops=[];gs.catchPs=[];gs.ripples=[];
+      gs.endT=0;gs.dimAlpha=0;gs.rainFaded=false;gs.rbPs=null;
+      scheduleGlow();lastTick=Date.now();
+      resetRain();
+      return;
+    }
+    return;
   }
 
   if(gs.phase!=="playing")return;
@@ -278,7 +393,8 @@ function tap(e){
     gs.ripples.push(mkRip(d.x,d.y));chime();
     if(gs.score>=DROPS_TO_WIN){
       gs.phase="ending";gs.endT=0;
-      gs.endQuote=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+      gs.endQuote=QUOTES[quoteIndex % QUOTES.length];
+      quoteIndex++;
       playEnd();
     }
   } else {
@@ -313,7 +429,7 @@ function drawDrop(d){
     c.fillStyle=`rgba(255,255,255,${0.95*p*d.fadeOut})`;
     c.beginPath();c.ellipse(d.x,d.y,2,3.5,0,0,Math.PI*2);c.fill();
   } else {
-    c.strokeStyle=`rgba(150,145,175,${d.opacity*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";
+    c.strokeStyle=`rgba(180,175,210,${d.opacity*d.fadeOut})`;c.lineWidth=d.width;c.lineCap="round";
     c.beginPath();c.moveTo(d.x+d.drift*5,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();
   }
   c.restore();
@@ -331,7 +447,7 @@ const ch = rect.height;
 
   // === BG ===
   const bg=c.createLinearGradient(0,0,0,ch);
-  bg.addColorStop(0,"#08060e");bg.addColorStop(0.4,"#0f0a1e");bg.addColorStop(1,"#1a1025");
+  bg.addColorStop(0,"#080614");bg.addColorStop(0.4,"#1c1535");bg.addColorStop(1,"#281840");
   c.fillStyle=bg;c.fillRect(0,0,cw,ch);
 
   // Static stars - not blinking
@@ -496,38 +612,33 @@ if (!d.grounded && (d.y + d.length/2) >= (ch + 2)) {
   // === MENU ===
   if(gs.phase==="menu"){
     gs.menuPulse+=0.018;
-    // Darker backdrop for readability
-    c.fillStyle="rgba(8,6,14,0.45)";c.fillRect(0,ch*0.28,cw,ch*0.42);
-    // Title
-    c.fillStyle="rgba(245,235,255,0.9)";c.font="600 32px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";c.fillText("raindrops",cw/2,ch/2-22);
-    // Tap prompt — pulsing
-    c.fillStyle=`rgba(230,210,255,${0.5+Math.sin(gs.menuPulse)*0.2})`;
-    c.font="600 15px 'Helvetica Neue',sans-serif";c.fillText("tap to begin",cw/2,ch/2+10);
-    // Subtitle
-    c.fillStyle="rgba(220,200,245,0.4)";c.font="12px 'Helvetica Neue',sans-serif";
-    c.fillText("catch the glowing drops",cw/2,ch/2+32);
-    // Scene name
-    c.fillStyle="rgba(220,200,245,0.3)";c.font="11px 'Helvetica Neue',sans-serif";
-    c.fillText("city at night",cw/2,ch/2+52);
+    const btnW=140,btnH=34,btnX=(cw-btnW)/2,btnY=ch-55;
+    c.fillStyle="rgba(50,25,80,0.85)";
+    c.beginPath();c.roundRect(btnX,btnY,btnW,btnH,17);c.fill();
+    c.fillStyle=`rgba(253,224,71,${0.8+Math.sin(gs.menuPulse)*0.2})`;
+    c.font="600 13px 'Helvetica Neue',sans-serif";
+    c.textAlign="center";c.fillText("tap to begin",cw/2,btnY+btnH/2+4);
   }
 // === ENDING SEQUENCE TRANSITION ===
   if(gs.phase==="ending"){
     gs.endT+=0.005;
     const t=Math.min(gs.endT,1);
 
- // Fade rain audio (HTML <audio>)
-if (!gs.rainFaded && t > 0.2) {
-  const rainEl = document.getElementById("rain");
-  if (rainEl) {
-    rainEl.volume = IS_MOBILE ? 0.25 : 0.18; 
-  }
-  gs.rainFaded = true;
-}
+    // Fade rain audio
+    if (!gs.rainFaded && t > 0.2) {
+      if(rainBuffer && rainGain && actx){
+        rainGain.gain.cancelScheduledValues(actx.currentTime);
+        rainGain.gain.linearRampToValueAtTime(0.08, actx.currentTime + 4);
+      } else {
+        const rainEl = document.getElementById("rain");
+        if(rainEl) rainEl.volume = IS_MOBILE ? 0.25 : 0.18;
+      }
+      gs.rainFaded = true;
+    }
 
-    // Interpolate sky to warm colors
-    const r1=Math.floor(8+(254-8)*t),g1=Math.floor(6+(243-6)*t),b1=Math.floor(14+(199-14)*t);
-    const r2=Math.floor(26+(221-26)*t),g2=Math.floor(16+(214-16)*t),b2=Math.floor(37+(254-37)*t);
+    // Fade to dark purple
+    const r1=Math.floor(8+(18-8)*t),g1=Math.floor(6+(12-6)*t),b1=Math.floor(14+(30-14)*t);
+    const r2=Math.floor(12+(25-12)*t),g2=Math.floor(8+(15-8)*t),b2=Math.floor(20+(40-20)*t);
     const tbg=c.createLinearGradient(0,0,0,ch);
     tbg.addColorStop(0,`rgb(${r1},${g1},${b1})`);tbg.addColorStop(1,`rgb(${r2},${g2},${b2})`);
     c.fillStyle=tbg;c.fillRect(0,0,cw,ch);
@@ -535,136 +646,132 @@ if (!gs.rainFaded && t > 0.2) {
     // Fade remaining drops
     for(let i=gs.drops.length-1;i>=0;i--){
       const d = gs.drops[i];
-if (d.isGlowing) continue;
-d.opacity *= 0.95;
-// d.speed *= 0.98;   // REMOVE or comment out
+      if (d.isGlowing) continue;
+      d.opacity *= 0.95;
       if(d.opacity<0.003){gs.drops.splice(i,1);continue;}
-      c.save();c.strokeStyle=`rgba(200,190,220,${d.opacity})`;c.lineWidth=d.width;c.lineCap="round";
+      c.save();c.strokeStyle=`rgba(180,160,220,${d.opacity})`;c.lineWidth=d.width;c.lineCap="round";
       c.beginPath();c.moveTo(d.x,d.y-d.length/2);c.lineTo(d.x,d.y+d.length/2);c.stroke();c.restore();
       d.y+=d.speed;
     }
 
-    // "breathe" text
-    if(t>0.4){
-      c.save();c.globalAlpha=Math.min((t-0.4)/0.6,1)*0.5;
-      c.fillStyle="rgba(120,80,150,1)";c.font="600 30px 'Helvetica Neue',sans-serif";
-      c.textAlign="center";c.fillText("Breathe",cw/2,ch/2-10);c.restore();
+    // Spawn floating pills
+    if(t>0.3){
+      if(!gs.rbPs||gs.rbPs.length===0){
+        gs.rbPs=[];
+        // Yellow/orange/amber palette for city night vibe
+        const cols=["#fbbf24","#f59e0b","#fcd34d","#fb923c","#fdba74","#fef08a","#c084fc","#e879f9"];
+        for(let i=0;i<100;i++) gs.rbPs.push({
+          x:Math.random()*cw, y:Math.random()*ch,
+          size:2+Math.random()*5,
+          color:cols[Math.floor(Math.random()*cols.length)],
+          speed:0.15+Math.random()*0.4,
+          wobble:Math.random()*Math.PI*2,
+          wobbleSpd:0.008+Math.random()*0.015,
+          opacity:0,
+          target:0.4+Math.random()*0.4,
+          shape:Math.random()>0.5?"c":"d",
+        });
+      }
+      const po=(t-0.3)/0.7;
+      gs.rbPs.forEach(p=>{
+        p.wobble+=p.wobbleSpd; p.y-=p.speed*0.3; p.x+=Math.sin(p.wobble)*0.3;
+        if(p.y<-10) p.y=ch+10;
+        c.save(); c.globalAlpha=p.target*po*0.5; c.fillStyle=p.color;
+        if(p.shape==="c"){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();}
+        else{c.translate(p.x,p.y);c.rotate(Math.PI/4);c.fillRect(-p.size/2,-p.size/2,p.size,p.size);}
+        c.restore();
+      });
     }
 
-   if (gs.endT > 2.5) {
-  gs.phase = "quote";
-  gs.quoteT0 = performance.now();   // start quote timing
-  gs.quoteGone = false;             // ✅ allow quote to show every run
-  gs.drops = gs.drops.filter(d => !d.isGlowing);
-}
-  }    
-  
-  // === QUOTE SCREEN WITH QUOTE ===
-  if(gs.phase==="quote"){
- 
-    // Sun
-    const sx=cw*0.75,sy=ch*0.2;
-    const sg=c.createRadialGradient(sx,sy,0,sx,sy,90);
-    sg.addColorStop(0,"rgba(253,224,71,0.7)");sg.addColorStop(0.3,"rgba(253,224,71,0.25)");sg.addColorStop(1,"rgba(253,224,71,0)");
-    c.fillStyle=sg;c.beginPath();c.arc(sx,sy,90,0,Math.PI*2);c.fill();
-    c.fillStyle="rgba(255,255,255,0.85)";c.beginPath();c.arc(sx,sy,22,0,Math.PI*2);c.fill();
-
-// Quote (text only) — fade in, hold ~10s, dissolve upward
-c.save();
-
-if (!gs.quoteT0) gs.quoteT0 = performance.now();
-if (gs.quoteGone == null) gs.quoteGone = false;
-
-const qt = (performance.now() - gs.quoteT0) / 1000;
-
-// timing (seconds)
-const FADE_IN = 0.6;
-const HOLD = 10.0;
-const FADE_OUT = 1.2;
-const LIFT_PX = 55;
-
-const total = FADE_IN + HOLD + FADE_OUT;
-
-let a = 1;
-let lift = 0;
-
-if (qt < FADE_IN) {
-  a = qt / FADE_IN;                 // fade in
-} else if (qt < FADE_IN + HOLD) {
-  a = 1;                            // hold
-} else if (qt < total) {
-  const u = (qt - (FADE_IN + HOLD)) / FADE_OUT; // 0..1
-  a = 1 - u;                        // fade out
-  lift = u * LIFT_PX;               // drift up
-} else {
-  a = 0;
-  gs.quoteGone = true;              // after dissolve, never draw again
-}
-
-if (!gs.quoteGone && a > 0.001 && gs.endQuote) {
-  // Wrap by pixel width (not character count)
-  const maxW = cw * 0.72;
-  const words = gs.endQuote.split(" ");
-  let lines = [];
-  let cur = "";
-
-  // (font change later — keep current for now)
-  c.font = "italic 600 22px 'Helvetica Neue',sans-serif";
-
-  for (const w of words) {
-    const test = cur ? cur + " " + w : w;
-    if (c.measureText(test).width > maxW && cur) {
-      lines.push(cur);
-      cur = w;
-    } else {
-      cur = test;
-    }
+    if(gs.endT>1.3){gs.phase="quote";gs.quoteStartTime=Date.now();}
   }
-  if (cur) lines.push(cur);
 
-  const lh = 34;
-  const blockH = lines.length * lh;
-  const baseY = ch * 0.50 - blockH / 2 - lift;
-// Fortune-cookie "paper" background
-const padX = 34;
-const padY = 20;
-const maxTextW = cw * 0.72;
-const pillW = Math.min(maxTextW + padX * 2, cw * 0.88);
-const pillH = blockH + padY * 2;
+  // === QUOTE SCREEN — DARK PURPLE ===
+  if(gs.phase==="quote"){
+    // Dark purple background
+    const rg=c.createLinearGradient(0,0,0,ch);
+    rg.addColorStop(0,"#0f0a1e");rg.addColorStop(0.5,"#0a0714");rg.addColorStop(1,"#140a20");
+    c.fillStyle=rg;c.fillRect(0,0,cw,ch);
 
-const pillX = (cw - pillW) / 2;
-const pillY = (ch * 0.50 - pillH / 2) - lift;
+    // Floating particles - yellow/orange/purple
+    if(gs.rbPs) gs.rbPs.forEach(p=>{
+      p.wobble+=p.wobbleSpd; p.y-=p.speed*0.2; p.x+=Math.sin(p.wobble)*0.25;
+      if(p.opacity<p.target) p.opacity+=0.006;
+      if(p.y<-10){p.y=ch+10; p.x=Math.random()*cw;}
+      c.save(); c.globalAlpha=p.opacity*0.7; c.fillStyle=p.color;
+      if(p.shape==="c"){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();}
+      else{c.translate(p.x,p.y);c.rotate(Math.PI/4);c.fillRect(-p.size/2,-p.size/2,p.size,p.size);}
+      c.restore();
+    });
 
-c.globalAlpha = a * 0.92;
-c.fillStyle = "rgba(255,244,220,0.9)";
-c.beginPath();
-c.roundRect(pillX, pillY, pillW, pillH, 18);
-c.fill();
+    // Quote — fade in, hold, fade out
+    const quoteAge = (Date.now() - gs.quoteStartTime) / 1000;
+    const quoteFade = quoteAge < 8 ? 1 : Math.max(0, 1 - (quoteAge - 8) / 2);
 
-c.globalAlpha = a * 0.75;
-c.strokeStyle = "rgba(120,80,150,0.22)";
-c.lineWidth = 1;
-c.stroke();
+    if(quoteFade > 0 && gs.endQuote){
+      c.save();
+      c.globalAlpha = quoteFade;
 
-c.globalAlpha = a; // restore for text
-c.fillStyle = "rgba(0,0,0,0.9)";
-c.textAlign = "center";
-c.textBaseline = "middle";
+      // Measure text to fit background to content
+      c.font = "italic 600 22px 'Helvetica Neue',sans-serif";
+      const maxW = cw * 0.72;
+      const words = gs.endQuote.split(" ");
+      let lines = [], cur = "";
+      for(const w of words){
+        const test = cur ? cur + " " + w : w;
+        if(c.measureText(test).width > maxW && cur){ lines.push(cur); cur = w; }
+        else cur = test;
+      }
+      if(cur) lines.push(cur);
 
-for (let i = 0; i < lines.length; i++) {
-  c.fillText(lines[i], cw / 2, baseY + i * lh);
-}
- 
-}
-   
-c.restore();
+      const lh = 34;
+      const padX = 28, padY = 18;
+      // Find widest line for pill width
+      let maxLineW = 0;
+      lines.forEach(l => { const w = c.measureText(l).width; if(w > maxLineW) maxLineW = w; });
+      const pillW = maxLineW + padX * 2;
+      const pillH = lines.length * lh + padY * 2;
+      const pillX = (cw - pillW) / 2;
+      const pillY = ch / 2 - pillH / 2;
 
-    // Tap to continue — button style
-    const btnW=140,btnH=34,btnX=(cw-btnW)/2,btnY=ch-55;
-   c.fillStyle="rgba(90,50,130,0.85)";
-    c.beginPath();c.roundRect(btnX,btnY,btnW,btnH,17);c.fill();
-    c.fillStyle="rgba(253,224,71,0.95)"; c.font="600 13px 'Helvetica Neue',sans-serif";
-    c.textAlign="center";c.fillText("Tap to continue",cw/2,btnY+btnH/2+4);
+      // Pill background - dark semi-transparent purple
+      c.globalAlpha = quoteFade * 0.88;
+      c.fillStyle = "rgba(20,12,40,0.75)";
+      c.beginPath(); c.roundRect(pillX, pillY, pillW, pillH, 14); c.fill();
+
+      // Subtle border
+      c.globalAlpha = quoteFade * 0.5;
+      c.strokeStyle = "rgba(180,140,255,0.3)";
+      c.lineWidth = 1;
+      c.stroke();
+
+      // Text
+      c.globalAlpha = quoteFade;
+      c.fillStyle = "rgba(235,225,255,0.95)";
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      lines.forEach((l, i) => c.fillText(l, cw/2, pillY + padY + lh*0.5 + i * lh));
+
+      c.restore();
+    }
+
+    // Replay and Home buttons
+    const btnW=120,btnH=34,btnY=ch-55,gap=16;
+    const totalW=btnW*2+gap;
+    const btn1X=(cw-totalW)/2;
+    const btn2X=btn1X+btnW+gap;
+
+    // Replay
+    c.fillStyle="rgba(50,25,80,0.85)";
+    c.beginPath();c.roundRect(btn1X,btnY,btnW,btnH,17);c.fill();
+    c.fillStyle="rgba(253,224,71,0.95)";c.font="600 13px 'Helvetica Neue',sans-serif";
+    c.textAlign="center";c.fillText("replay",btn1X+btnW/2,btnY+btnH/2+4);
+
+    // Home
+    c.fillStyle="rgba(50,25,80,0.85)";
+    c.beginPath();c.roundRect(btn2X,btnY,btnW,btnH,17);c.fill();
+    c.fillStyle="rgba(253,224,71,0.95)";c.font="600 13px 'Helvetica Neue',sans-serif";
+    c.textAlign="center";c.fillText("home",btn2X+btnW/2,btnY+btnH/2+4);
   }
 
   requestAnimationFrame(loop);
