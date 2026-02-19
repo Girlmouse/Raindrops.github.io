@@ -16,7 +16,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 </head>
 <body>
 <canvas id="g"></canvas>
-<audio id="swampAudio" preload="auto" loop playsinline><source src="audio/swamp.mp3" type="audio/mpeg"></audio>
+<audio id="swampAudio" preload="auto" loop playsinline><source src="audio/rain.mp3" type="audio/mpeg"></audio>
 <audio id="frogAudio" preload="auto" loop playsinline><source src="audio/frogs.mp3" type="audio/mpeg"></audio>
 <p class="sub">RAINDROPS — A moment in time</p>
 <script>
@@ -100,7 +100,7 @@ function initAudio(){
     gainB=actx.createGain();gainB.gain.value=IS_MOBILE?0.38:0.30;gainB.connect(actx.destination);
     frogGain=actx.createGain();frogGain.gain.value=IS_MOBILE?0.22:0.18;frogGain.connect(actx.destination);
     started=true;
-    fetch("audio/swamp.mp3").then(r=>{if(!r.ok)throw new Error();return r.arrayBuffer();})
+    fetch("audio/rain.mp3").then(r=>{if(!r.ok)throw new Error();return r.arrayBuffer();})
       .then(ab=>actx.decodeAudioData(ab))
       .then(buf=>{swampBuffer=buf;swampLoaded=true;checkReady();}).catch(()=>useFallback());
     fetch("audio/frogs.mp3").then(r=>{if(!r.ok)throw new Error();return r.arrayBuffer();})
