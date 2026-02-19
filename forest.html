@@ -306,7 +306,7 @@ function mkDrop(w,h,forceGlow){
     : Math.random()*w;
   return{
     x:xPos, y:-10-Math.random()*50,
-    speed:gl ? (1.0+Math.random()*0.5)*speedScale : (18.0+Math.random()*14.0)*speedScale,
+    speed:gl ? (1.2+Math.random()*0.5)*speedScale : (18.0+Math.random()*14.0)*speedScale,
     length:gl?16+Math.random()*10:2+Math.random()*5,
     opacity:gl?1:0.08+Math.random()*0.22,
     isGlowing:gl,pulsePhase:Math.random()*Math.PI*2,
@@ -624,7 +624,7 @@ function loop(){
 
     // Quote — sized to text
     const quoteAge=(Date.now()-gs.quoteStartTime)/1000;
-    const quoteFade=quoteAge<8?1:Math.max(0,1-(quoteAge-8)/2);
+    const quoteFade=quoteAge<7?1:Math.max(0,1-(quoteAge-7)/2);
 
     if(quoteFade>0 && gs.endQuote){
       c.save();
