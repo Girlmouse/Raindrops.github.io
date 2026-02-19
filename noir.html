@@ -849,9 +849,7 @@ function loop(){
   if(gs.phase==="menu"){
     gs.menuPulse+=0.018;
     c.fillStyle="rgba(0,0,0,0.6)";c.fillRect(0,ch*0.28,cw,ch*0.42);
-    c.fillStyle="rgba(220,220,215,0.9)";c.font="600 32px 'Helvetica Neue',sans-serif";c.textAlign="center";c.fillText("raindrops",cw/2,ch/2-22);
-    c.fillStyle=`rgba(180,180,175,${0.5+Math.sin(gs.menuPulse)*0.2})`;c.font="600 15px 'Helvetica Neue',sans-serif";c.fillText("tap to begin",cw/2,ch/2+10);
-    c.fillStyle="rgba(150,150,145,0.4)";c.font="12px 'Helvetica Neue',sans-serif";c.fillText("catch the glowing drops",cw/2,ch/2+32);
+    // menu text removed
     c.fillStyle="rgba(150,150,145,0.3)";c.font="11px 'Helvetica Neue',sans-serif";c.fillText("noir",cw/2,ch/2+52);
   }
 
@@ -902,7 +900,7 @@ function loop(){
     if(gs.rbPs)gs.rbPs.forEach(p=>{p.wobble+=p.wobbleSpd;p.y-=p.speed*0.15;p.x+=Math.sin(p.wobble)*0.15;if(p.opacity<p.target)p.opacity+=0.004;if(p.y<-10){p.y=ch+10;p.x=Math.random()*cw;}c.save();c.globalAlpha=p.opacity*0.5;c.fillStyle=p.color;if(p.shape==="c"){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();}else{c.translate(p.x,p.y);c.rotate(Math.PI/4);c.fillRect(-p.size/2,-p.size/2,p.size,p.size);}c.restore();});
     
     const quoteAge=(Date.now()-gs.quoteStartTime)/1000;
-    const quoteFade=quoteAge<8?1:Math.max(0,1-(quoteAge-8)/2);
+    const quoteFade=quoteAge<7?1:Math.max(0,1-(quoteAge-7)/2);
     if(quoteFade>0&&gs.endQuote){
       c.save();
       c.font="italic 600 22px 'Helvetica Neue',sans-serif";
