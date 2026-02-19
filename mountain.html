@@ -129,7 +129,7 @@ function startFire(){
   src.buffer=buf;src.loop=true;
   const bp=actx.createBiquadFilter();bp.type="bandpass";bp.frequency.value=350;bp.Q.value=0.6;
   const hp=actx.createBiquadFilter();hp.type="highpass";hp.frequency.value=120;
-  fireGainNode=actx.createGain();fireGainNode.gain.value=IS_MOBILE?0.18:0.14;
+  fireGainNode=actx.createGain();fireGainNode.gain.value=IS_MOBILE?0.05:0.04;
   src.connect(bp);bp.connect(hp);hp.connect(fireGainNode);
   fireGainNode.connect(actx.destination);
   src.start();fireNode=src;
