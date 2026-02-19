@@ -17,7 +17,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 <body>
 <canvas id="g"></canvas>
 <audio id="rainAudio" preload="auto" loop playsinline>
-  <source src="audio/forest.mp3" type="audio/mpeg">
+  <source src="audio/rain.mp3" type="audio/mpeg">
 </audio>
 <audio id="cricketsAudio" preload="auto" loop playsinline>
   <source src="audio/crickets.mp3" type="audio/mpeg">
@@ -114,7 +114,7 @@ function initAudio(){
     // Crickets gain — quieter
     cricketsGain=actx.createGain(); cricketsGain.gain.value=IS_MOBILE?0.6:0.45; cricketsGain.connect(actx.destination);
     started=true;
-    loadBuffer("audio/forest.mp3", buf=>{ rainBuffer=buf; if(rainPlaying) startLoops(); });
+    loadBuffer("audio/rain.mp3", buf=>{ rainBuffer=buf; if(rainPlaying) startLoops(); });
     loadBuffer("audio/crickets.mp3", buf=>{ cricketsBuffer=buf; if(rainPlaying && crickState.src===null) { crickState.startAt=actx.currentTime; scheduleXf(cricketsBuffer,cricketsGain,crickState); } });
   }catch(e){}
 }
