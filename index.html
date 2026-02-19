@@ -420,10 +420,7 @@
     </div>
 
     <!-- Audio: ambient rain (looped, quiet) -->
-    <audio id="ambientRain" loop preload="auto">
-        <!-- You'll add your rain audio file here -->
-        <!-- <source src="assets/audio/ambient-rain.mp3" type="audio/mpeg"> -->
-    </audio>
+    <audio id="ambientRain" loop preload="auto"><source src="audio/rain.mp3" type="audio/mpeg"></audio>
 
     <!-- Audio: bloop sound for button taps -->
     <audio id="bloopSound" preload="auto">
@@ -462,7 +459,7 @@
         function startAmbientRain() {
             const rain = document.getElementById('ambientRain');
             if (rain && rain.src) {
-                rain.volume = 0.2;
+                rain.volume = 0.12;
                 rain.play().catch(() => {});
             }
         }
