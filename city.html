@@ -18,7 +18,7 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 <canvas id="g"></canvas>
 
 <audio id="rain" preload="auto" loop playsinline>
-  <source src="audio/city.mp3" type="audio/mpeg">
+  <source src="audio/rain.mp3" type="audio/mpeg">
 </audio>
 <p class="sub">RAINDROPS — A MOMENT IN TIME</p>
 <script>
@@ -44,14 +44,14 @@ let quoteIndex = 0;
 
 // === AUDIO ===
 let actx = null, started = false;
-let rainBuffer = null;       // decoded AudioBuffer for city.mp3
+let rainBuffer = null;       // decoded AudioBuffer for rain.mp3
 let rainGain = null;         // master gain for rain (for fade on ending)
 let rainPlaying = false;
 
 // Load mp3 once, decode into buffer — falls back to <audio> if fetch fails (e.g. file://)
 function loadRainBuffer(){
   if(!actx || rainBuffer) return;
-  fetch("audio/city.mp3")
+  fetch("audio/rain.mp3")
     .then(r => {
       if(!r.ok) throw new Error("fetch failed");
       return r.arrayBuffer();
