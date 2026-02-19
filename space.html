@@ -312,10 +312,10 @@ function drawEarth(w,h,t){
 let phase="sanctuary"; // always sanctuary, no menu needed... or maybe a gentle entrance
 
 // Button state
-const btn={w:130,h:32};
+const btn={w:52,h:24};
 
 function getBtnPos(cw,ch){
-  return{x:(cw-btn.w)/2,y:ch-48};
+  return{x:cw-btn.w-14,y:ch-btn.h-14};
 }
 
 // === INPUT ===
@@ -478,16 +478,18 @@ function loop(){
     c.beginPath();c.arc(r.x,r.y,r.radius,0,Math.PI*2);c.stroke();c.restore();
   }
 
-  // === "TAKE ME HOME" BUTTON ===
+  // === HOME — small corner label ===
   const bp=getBtnPos(cw,ch);
-  c.fillStyle="rgba(255,255,255,0.06)";
-  c.beginPath();c.roundRect(bp.x,bp.y,btn.w,btn.h,16);c.fill();
-  c.strokeStyle="rgba(200,210,240,0.12)";c.lineWidth=0.5;
-  c.beginPath();c.roundRect(bp.x,bp.y,btn.w,btn.h,16);c.stroke();
-  c.fillStyle="rgba(200,210,240,0.45)";
-  c.font="600 12px 'Helvetica Neue',sans-serif";
-  c.textAlign="center";
-  c.fillText("take me home",bp.x+btn.w/2,bp.y+btn.h/2+4);
+  c.save();
+  const _tw=c.measureText("home").width;
+  const _px=cw-14,_py=ch-16,_pad=6;
+  c.fillStyle="rgba(8,14,40,0.72)";
+  c.beginPath();c.roundRect(_px-_tw-_pad,_py-13,_tw+_pad*2,20,6);c.fill();
+  c.fillStyle="rgba(200,218,255,0.92)";
+  c.font="500 11px 'Helvetica Neue',sans-serif";
+  c.textAlign="right";
+  c.fillText("home",_px,_py);
+  c.restore();
 
   c.restore();
 
