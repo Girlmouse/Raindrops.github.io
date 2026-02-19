@@ -44,29 +44,11 @@ let quoteIndex = 0;
 
 // === AUDIO ===
 let actx = null, started = false;
-let rainBuffer = null;       // decoded AudioBuffer for rain.mp3
-let rainGain = null;         // master gain for rain (for fade on ending)
+let rainBuffer = null;
+let rainGain = null;
 let rainPlaying = false;
 
-// Load mp3 once, decode into buffer — falls back to <audio> if fetch fails (e.g. file://)
-function loadRainBuffer(){
-  if(!actx || rainBuffer) return;
-  fetch("audio/rain.mp3")
-    .then(r => {
-      if(!r.ok) throw new Error("fetch failed");
-      return r.arrayBuffer();
-    })
-    .then(ab => actx.decodeAudioData(ab))
-    .then(buf => {
-      rainBuffer = buf;
-      if(rainPlaying) startCrossfadeLoop();
-    })
-    .catch(e => {
-      console.log("Crossfade unavailable, using <audio> fallback:", e);
-      useFallback();
-    });
-}
-
+// Simple <audio> element approach — works with file:// and servers
 function useFallback(){
   const rainEl = document.getElementById("rain");
   if(!rainEl) return;
@@ -75,61 +57,21 @@ function useFallback(){
   if(rainPlaying) rainEl.play().catch(e => console.log("Audio play blocked:", e));
 }
 
-// Crossfade loop state
-let xfSrc = null;       // currently playing source
-let xfTimer = null;     // setTimeout handle for next crossfade
-
-const CROSSFADE_DUR = 2.5;  // seconds of overlap at loop point
-
 function startCrossfadeLoop(){
-  if(!actx || !rainBuffer || !rainGain) return;
-  scheduleNext(actx.currentTime);
-}
-
-function scheduleNext(startAt){
-  if(!actx || !rainBuffer || !rainGain) return;
-
-  const dur = rainBuffer.duration;
-  const src = actx.createBufferSource();
-  src.buffer = rainBuffer;
-
-  // Per-source gain for crossfade
-  const srcGain = actx.createGain();
-  srcGain.gain.setValueAtTime(0, startAt);
-  srcGain.gain.linearRampToValueAtTime(1, startAt + CROSSFADE_DUR); // fade in
-  // Fade out near end
-  const fadeOutAt = startAt + dur - CROSSFADE_DUR;
-  srcGain.gain.setValueAtTime(1, fadeOutAt);
-  srcGain.gain.linearRampToValueAtTime(0, startAt + dur);
-
-  src.connect(srcGain);
-  srcGain.connect(rainGain);
-  src.start(startAt);
-  src.stop(startAt + dur);
-
-  xfSrc = src;
-
-  // Schedule next iteration to overlap by CROSSFADE_DUR
-  const msUntilNext = (dur - CROSSFADE_DUR - (actx.currentTime - startAt)) * 1000;
-  const delay = Math.max(0, (startAt + dur - CROSSFADE_DUR - actx.currentTime) * 1000);
-  xfTimer = setTimeout(() => scheduleNext(actx.currentTime), delay);
+  useFallback();
 }
 
 function stopRainLoop(){
-  if(xfTimer){ clearTimeout(xfTimer); xfTimer = null; }
-  if(xfSrc){ try{ xfSrc.stop(); } catch(e){} xfSrc = null; }
+  const rainEl = document.getElementById("rain");
+  if(rainEl){ rainEl.pause(); rainEl.currentTime = 0; }
 }
 
 function initAudio(){
   if(started) return;
   try{
     actx = new (window.AudioContext || window.webkitAudioContext)();
-    // Master rain gain node
-    rainGain = actx.createGain();
-    rainGain.gain.value = IS_MOBILE ? 1.0 : 0.6;
-    rainGain.connect(actx.destination);
+    rainGain = { gain: { value: IS_MOBILE ? 1.0 : 0.6, cancelScheduledValues: ()=>{}, linearRampToValueAtTime: (val)=>{ document.getElementById("rain").volume = val; } } };
     started = true;
-    loadRainBuffer();
   } catch(e) {}
 }
 
@@ -168,18 +110,12 @@ function playEnd(){
 }
 
 function resetRain(){
-  if(rainBuffer && rainGain && actx){
-    rainGain.gain.cancelScheduledValues(actx.currentTime);
-    rainGain.gain.linearRampToValueAtTime(IS_MOBILE ? 1.0 : 0.6, actx.currentTime + 1);
-    stopRainLoop();
-    rainPlaying = true;
-    startCrossfadeLoop();
-  } else {
-    const rainEl = document.getElementById("rain");
-    if(!rainEl) return;
-    rainEl.volume = IS_MOBILE ? 1.0 : 0.6;
-    rainEl.muted = false;
-  }
+  const rainEl = document.getElementById("rain");
+  if(!rainEl) return;
+  rainEl.volume = IS_MOBILE ? 1.0 : 0.6;
+  rainEl.muted = false;
+  rainPlaying = true;
+  rainEl.play().catch(e => console.log("Audio play blocked:", e));
 }
 // === CANVAS ===
 
@@ -333,12 +269,7 @@ function tap(e){
   // Start rain loop on first tap
   if(!rainPlaying){
     rainPlaying = true;
-    if(rainBuffer && rainGain){
-      startCrossfadeLoop();
-    } else if(!rainBuffer){
-      // buffer still loading or fetch failed — useFallback handles it
-      useFallback();
-    }
+    useFallback();
   }
   const p = getPos(e);
 
@@ -627,12 +558,18 @@ if (!d.grounded && (d.y + d.length/2) >= (ch + 2)) {
 
     // Fade rain audio
     if (!gs.rainFaded && t > 0.2) {
-      if(rainBuffer && rainGain && actx){
-        rainGain.gain.cancelScheduledValues(actx.currentTime);
-        rainGain.gain.linearRampToValueAtTime(0.08, actx.currentTime + 4);
-      } else {
-        const rainEl = document.getElementById("rain");
-        if(rainEl) rainEl.volume = IS_MOBILE ? 0.25 : 0.18;
+      const rainEl = document.getElementById("rain");
+      if(rainEl){
+        // Gradually fade volume over 4 seconds using setInterval
+        const startVol = rainEl.volume;
+        const targetVol = IS_MOBILE ? 0.08 : 0.06;
+        const steps = 80;
+        let step = 0;
+        const fadeInterval = setInterval(()=>{
+          step++;
+          rainEl.volume = Math.max(targetVol, startVol - (startVol - targetVol) * (step/steps));
+          if(step >= steps) clearInterval(fadeInterval);
+        }, 50);
       }
       gs.rainFaded = true;
     }
