@@ -26,11 +26,11 @@ canvas{border-radius:12px;cursor:pointer;touch-action:none;box-shadow:0 0 60px r
 <script>
 // === CONFIG ===
 const DROPS_TO_WIN = 20;
-const RAIN_INT = 40;
+const RAIN_INT = 25;
 const GLOW_MIN_GAP = 3000;
 const GLOW_MAX_GAP = 6000;
 const HIT_R = 45;
-const DENSE = 6;
+const DENSE = 14;
 const GLOW_MARGIN = 0.12;
 
 const QUOTES = [
@@ -114,7 +114,13 @@ function initAudio(){
     // Crickets gain — quieter
     cricketsGain=actx.createGain(); cricketsGain.gain.value=IS_MOBILE?0.6:0.45; cricketsGain.connect(actx.destination);
     started=true;
-    loadBuffer("audio/rain.mp3", buf=>{ rainBuffer=buf; if(rainPlaying) startLoops(); });
+    loadBuffer("audio/rain.mp3", buf=>{
+      rainBuffer=buf;
+      // Mute HTML fallback so only WebAudio plays — prevents echo
+      const rainEl=document.getElementById("rainAudio");
+      if(rainEl){rainEl.volume=0;rainEl.pause();}
+      if(rainPlaying) startLoops();
+    });
     loadBuffer("audio/crickets.mp3", buf=>{ cricketsBuffer=buf; if(rainPlaying && crickState.src===null) { crickState.startAt=actx.currentTime; scheduleXf(cricketsBuffer,cricketsGain,crickState); } });
   }catch(e){}
 }
@@ -303,7 +309,7 @@ function mkDrop(w,h,forceGlow){
     x:xPos, y:-10-Math.random()*50,
     speed:gl ? (1.2+Math.random()*0.5)*speedScale : (18.0+Math.random()*14.0)*speedScale,
     length:gl?16+Math.random()*10:2+Math.random()*5,
-    opacity:gl?1:0.08+Math.random()*0.22,
+    opacity:gl?1:0.25+Math.random()*0.35,
     isGlowing:gl,pulsePhase:Math.random()*Math.PI*2,
     width:gl?2.5:0.6+Math.random()*0.8,
     caught:false,fadeOut:1,
