@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.lunabellegames.raindrops",
+        "sha256_cert_fingerprints": ["CC:E0:16:02:1C:EC:3A:F8:08:AF:73:74:F6:E8:66:D9:5F:D3:C8:EB:78:97:4F:38:23:9E:5E:4D:F9:4D:9B:A2"]
+      }
+    }]
