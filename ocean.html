@@ -156,12 +156,7 @@ function resetRain(){
 
 // === CANVAS (4:3 like mountain scene) ===
 const cv=document.getElementById("g"),c=cv.getContext("2d");
-function getSize(){
-  const mw=Math.min(window.innerWidth*0.98,800);
-  const mh=(window.innerHeight||document.documentElement.clientHeight)*0.88;
-  let w=mw,h=w/(4/3);if(h>mh){h=mh;w=h*(4/3);}if(w>mw){w=mw;h=w/(4/3);}
-  return{w:Math.floor(w),h:Math.floor(h)};
-}
+function getSize(){const W=window.innerWidth,H=window.innerHeight||document.documentElement.clientHeight;const IS_MOB=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);if(IS_MOB){return{w:Math.floor(W),h:Math.floor(H)};}const mw=Math.min(W*0.98,800),mh=H*0.92;let w=mw,h=mw*(4/3);if(h>mh){h=mh;w=h*(3/4);}return{w:Math.floor(w),h:Math.floor(h)};}
 function resize(){const{w,h}=getSize();cv.width=w*2;cv.height=h*2;cv.style.width=w+"px";cv.style.height=h+"px";c.setTransform(2,0,0,2,0,0);}
 resize();window.addEventListener("resize",resize);
 
