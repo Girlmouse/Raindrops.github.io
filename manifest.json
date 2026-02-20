@@ -1,0 +1,21 @@
+{
+  "name": "Raindrops — A moment in time",
+  "short_name": "Raindrops",
+  "description": "A rainy escape. Catch glowing drops. Find your moment of calm.",
+  "start_url": "/Raindrops.github.io/",
+  "scope": "/Raindrops.github.io/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1b2328",
+  "theme_color": "#1b2328",
+  "icons": [
+    {
+      "src": "logo_ios.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "en"
+}
