@@ -848,9 +848,15 @@ function loop(){
   // Menu
   if(gs.phase==="menu"){
     gs.menuPulse+=0.018;
-    c.fillStyle="rgba(0,0,0,0.6)";c.fillRect(0,ch*0.28,cw,ch*0.42);
-    // menu text removed
-    c.fillStyle="rgba(150,150,145,0.3)";c.font="11px 'Helvetica Neue',sans-serif";c.fillText("noir",cw/2,ch/2+52);
+    // tap to begin button — bottom center
+    const btnW=140,btnH=34,btnX=(cw-btnW)/2,btnY=ch-55;
+    c.fillStyle="rgba(20,20,20,0.85)";
+    c.beginPath();c.roundRect(btnX,btnY,btnW,btnH,17);c.fill();
+    c.fillStyle=`rgba(253,224,71,${0.8+Math.sin(gs.menuPulse)*0.2})`;
+    c.font="600 13px 'Helvetica Neue',sans-serif";
+    c.textAlign="center";
+    c.fillText("tap to begin",cw/2,btnY+btnH/2+4);
+    c.fillStyle="rgba(150,150,145,0.3)";c.font="11px 'Helvetica Neue',sans-serif";c.fillText("noir",cw/2,btnY-12);
   }
 
   // Ending
